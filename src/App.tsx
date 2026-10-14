@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GameMode, ManagementBlock, PillarId, PillarPlacements, OverallEvaluation } from './types/game';
+import { ManagementBlock, PillarId, PillarPlacements, OverallEvaluation } from './types/game';
 import { MANAGEMENT_BLOCKS } from './data/blocks';
-import { GAME_MODES } from './data/scenarios';
 import { calculateOrganizationEvaluation } from './utils/scoring';
 import { Navbar } from './components/Navbar';
 import { LandingScreen } from './components/LandingScreen';
@@ -11,7 +10,6 @@ import { PresentationModal } from './components/PresentationModal';
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'landing' | 'building' | 'results'>('landing');
-  const [currentMode, setCurrentMode] = useState<GameMode>('quick');
   const [placements, setPlacements] = useState<PillarPlacements>({
     people: [],
     performance: [],
@@ -34,53 +32,31 @@ export const App: React.FC = () => {
     }
   }, [presentationMode]);
 
-  // Start or reset a game mode
-  const startGame = (mode: GameMode) => {
-    const config = GAME_MODES[mode];
-    setCurrentMode(mode);
-
-    // Deep clone initial placements
-    const initialPlacements: PillarPlacements = {
-      people: [...config.initialPlacements.people],
-      performance: [...config.initialPlacements.performance],
-      innovation: [...config.initialPlacements.innovation],
-      purpose: [...config.initialPlacements.purpose],
-      structure: [...config.initialPlacements.structure],
-    };
-
-    // Collect already placed block IDs
-    const placedIds = new Set<string>();
-    Object.values(initialPlacements).forEach(blocks => {
-      blocks.forEach(b => placedIds.add(b.id));
+  // Start a fresh unified game
+  const startGame = () => {
+    setPlacements({
+      people: [],
+      performance: [],
+      innovation: [],
+      purpose: [],
+      structure: []
     });
-
-    // Populate available bench
-    const bench = config.availableBlockIds
-      .filter(id => !placedIds.has(id))
-      .map(id => MANAGEMENT_BLOCKS.find(b => b.id === id)!)
-      .filter(Boolean);
-
-    setPlacements(initialPlacements);
-    setAvailableBlocks(bench);
+    // All 63 blocks available in bench
+    setAvailableBlocks([...MANAGEMENT_BLOCKS]);
     setSelectedBlock(null);
     setEvaluation(null);
     setScreen('building');
-  };
-
-  // Switch mode directly
-  const handleSelectMode = (mode: GameMode) => {
-    startGame(mode);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Drag and drop handler
   const handleDropBlock = (blockId: string, targetPillarId: PillarId, sourcePillarId?: PillarId | null) => {
     let block: ManagementBlock | undefined;
 
-    // Check if source is a pillar
+    // Check if source is another pillar
     if (sourcePillarId && sourcePillarId !== targetPillarId) {
       block = placements[sourcePillarId].find(b => b.id === blockId);
       if (block) {
-        // Remove from source pillar
         setPlacements(prev => ({
           ...prev,
           [sourcePillarId]: prev[sourcePillarId].filter(b => b.id !== blockId),
@@ -95,7 +71,6 @@ export const App: React.FC = () => {
     block = availableBlocks.find(b => b.id === blockId);
     if (!block) return;
 
-    // Remove from bench & add to target pillar
     setAvailableBlocks(prev => prev.filter(b => b.id !== blockId));
     setPlacements(prev => ({
       ...prev,
@@ -104,14 +79,12 @@ export const App: React.FC = () => {
     setSelectedBlock(null);
   };
 
-  // Click-to-place handler (when a block is selected and a pillar is clicked)
+  // Click-to-place handler
   const handleSelectPillar = (pillarId: PillarId) => {
     if (!selectedBlock) return;
 
-    // Remove from bench
     setAvailableBlocks(prev => prev.filter(b => b.id !== selectedBlock.id));
 
-    // Also remove from any other pillar if it was already placed somewhere
     setPlacements(prev => {
       const next: PillarPlacements = {
         people: prev.people.filter(b => b.id !== selectedBlock.id),
@@ -127,7 +100,7 @@ export const App: React.FC = () => {
     setSelectedBlock(null);
   };
 
-  // Remove block from a pillar back to the bench
+  // Remove block from a pillar back to bench
   const handleRemoveBlock = (block: ManagementBlock, pillarId?: PillarId) => {
     if (!pillarId) return;
 
@@ -136,7 +109,6 @@ export const App: React.FC = () => {
       [pillarId]: prev[pillarId].filter(b => b.id !== block.id)
     }));
 
-    // Add back to bench if not already there
     setAvailableBlocks(prev => {
       if (prev.some(b => b.id === block.id)) return prev;
       return [...prev, block].sort((a, b) => a.blockNumber - b.blockNumber);
@@ -171,7 +143,7 @@ export const App: React.FC = () => {
     setSelectedBlock(null);
   };
 
-  // Evaluate the organization
+  // Strategic evaluation
   const handleEvaluate = () => {
     const result = calculateOrganizationEvaluation(placements);
     setEvaluation(result);
@@ -185,18 +157,15 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Play again: restart from current mode
+  // Play again: restart fresh simulation
   const handlePlayAgain = () => {
-    startGame(currentMode);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    startGame();
   };
 
   return (
     <div className="min-h-screen bg-enterprise-grid flex flex-col text-slate-100 selection:bg-cyan-500 selection:text-white">
       {/* Top Navbar */}
       <Navbar
-        currentMode={currentMode}
-        onSelectMode={handleSelectMode}
         presentationMode={presentationMode}
         onTogglePresentationMode={() => setPresentationMode(prev => !prev)}
         onOpenPrinciplesModal={() => setIsPrinciplesModalOpen(true)}
@@ -209,8 +178,6 @@ export const App: React.FC = () => {
         {screen === 'landing' && (
           <LandingScreen
             onStartGame={startGame}
-            selectedMode={currentMode}
-            onSelectMode={setCurrentMode}
             presentationMode={presentationMode}
             onTogglePresentationMode={() => setPresentationMode(prev => !prev)}
             onOpenPrinciplesModal={() => setIsPrinciplesModalOpen(true)}
@@ -228,7 +195,6 @@ export const App: React.FC = () => {
             onRemoveBlock={handleRemoveBlock}
             onEvaluate={handleEvaluate}
             onResetBoard={handleResetBoard}
-            currentMode={currentMode}
             presentationMode={presentationMode}
           />
         )}

@@ -1,20 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { ManagementBlock, PillarId, PillarPlacements, OverallEvaluation, GameMode } from '../types/game';
+import { ManagementBlock, PillarId, PillarPlacements } from '../types/game';
 import { PILLARS } from '../data/pillars';
 import { OrganizationPillar } from './OrganizationPillar';
 import { CharacteristicBlock } from './CharacteristicBlock';
 import { OrganizationBlueprint } from './OrganizationBlueprint';
 import { StrengthMeter } from './StrengthMeter';
-import { GAME_MODES } from '../data/scenarios';
 import { 
   Building2, 
   RotateCcw, 
   CheckCircle2, 
   Layers, 
-  Search,
-  X,
-  ArrowRight,
-  Filter
+  Search, 
+  X, 
+  ArrowRight, 
+  Filter 
 } from 'lucide-react';
 
 interface OrganizationBuilderProps {
@@ -27,7 +26,6 @@ interface OrganizationBuilderProps {
   onRemoveBlock: (block: ManagementBlock, pillarId?: PillarId) => void;
   onEvaluate: () => void;
   onResetBoard: () => void;
-  currentMode: GameMode;
   presentationMode: boolean;
 }
 
@@ -41,13 +39,10 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
   onRemoveBlock,
   onEvaluate,
   onResetBoard,
-  currentMode,
   presentationMode,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | PillarId>('all');
-
-  const modeConfig = GAME_MODES[currentMode];
 
   // Count placed blocks
   let totalBlocksPlaced = 0;
@@ -63,7 +58,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
   // Filter available blocks
   const filteredBlocks = useMemo(() => {
     return availableBlocks.filter(block => {
-      // Category filter based on primary alignment
+      // Category filter based on primary or secondary alignment
       if (categoryFilter !== 'all') {
         const matchesCategory = block.primaryPillar === categoryFilter || block.secondaryPillars?.includes(categoryFilter);
         if (!matchesCategory) return false;
@@ -103,7 +98,6 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
         blocksPlacedCount={totalBlocksPlaced}
         pillarsCompletedCount={pillarsCompletedCount}
         minBlocksRequired={5}
-        currentModeTitle={modeConfig.title}
         presentationMode={presentationMode}
       />
 

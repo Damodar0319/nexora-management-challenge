@@ -1,11 +1,7 @@
 import React from 'react';
-import { GameMode } from '../types/game';
-import { GAME_MODES } from '../data/scenarios';
-import { Building2, Presentation, HelpCircle, RotateCcw, Sparkles } from 'lucide-react';
+import { Presentation, HelpCircle, RotateCcw } from 'lucide-react';
 
 interface NavbarProps {
-  currentMode: GameMode;
-  onSelectMode: (mode: GameMode) => void;
   presentationMode: boolean;
   onTogglePresentationMode: () => void;
   onOpenPrinciplesModal: () => void;
@@ -14,8 +10,6 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentMode,
-  onSelectMode,
   presentationMode,
   onTogglePresentationMode,
   onOpenPrinciplesModal,
@@ -23,7 +17,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isInGame,
 }) => {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-nexora-950/80 border-b border-slate-800/80 px-4 py-3">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-nexora-950/85 border-b border-slate-800/80 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Brand Logo & Wordmark */}
         <div className="flex items-center gap-3 cursor-pointer" onClick={onResetGame}>
@@ -37,8 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-black text-base sm:text-lg tracking-wider text-white font-display">
                 NEXORA
               </span>
-              <span className="hidden md:inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-                Simulation Lab
+              <span className="hidden sm:inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                Management Challenge
               </span>
             </div>
             <div className="text-[10px] text-slate-400 hidden sm:block font-medium">
@@ -47,30 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Center / Mode indicator */}
-        {isInGame && (
-          <div className="hidden lg:flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-            {Object.values(GAME_MODES).map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => onSelectMode(mode.id)}
-                className={`
-                  px-3 py-1 rounded-lg font-medium transition-all
-                  ${currentMode === mode.id
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                  }
-                `}
-              >
-                {mode.title}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Right utility actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Principles Explainer Modal trigger */}
           <button
             type="button"

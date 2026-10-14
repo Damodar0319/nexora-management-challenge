@@ -6,8 +6,7 @@ interface StrengthMeterProps {
   evaluation?: OverallEvaluation | null;
   blocksPlacedCount: number;
   pillarsCompletedCount: number;
-  minBlocksRequired: number;
-  currentModeTitle: string;
+  minBlocksRequired?: number;
   presentationMode?: boolean;
 }
 
@@ -16,7 +15,6 @@ export const StrengthMeter: React.FC<StrengthMeterProps> = ({
   blocksPlacedCount,
   pillarsCompletedCount,
   minBlocksRequired = 5,
-  currentModeTitle,
   presentationMode = false,
 }) => {
   const [animatedScore, setAnimatedScore] = useState(0);
@@ -105,7 +103,7 @@ export const StrengthMeter: React.FC<StrengthMeterProps> = ({
             </div>
           ) : (
             <div className="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-xs font-mono text-slate-300">
-              BUILD PHASE • {currentModeTitle}
+              BUILD PHASE • STRATEGIC ASSEMBLY
             </div>
           )}
         </div>
@@ -126,19 +124,19 @@ export const StrengthMeter: React.FC<StrengthMeterProps> = ({
           ) : (
             <>
               <span className="text-slate-300">
-                Pillars Built: <strong className="text-cyan-400">{pillarsCompletedCount} / 5</strong>
+                Pillars Configured: <strong className="text-cyan-400">{pillarsCompletedCount} / 5</strong>
               </span>
               <span className="text-slate-400 font-mono">
                 {blocksPlacedCount >= minBlocksRequired
-                  ? 'Minimum 5 blocks reached (Ready)'
-                  : `${minBlocksRequired - blocksPlacedCount} more block${minBlocksRequired - blocksPlacedCount > 1 ? 's' : ''} needed`
+                  ? `${blocksPlacedCount} policies assigned (Ready to Evaluate)`
+                  : `${minBlocksRequired - blocksPlacedCount} more required to evaluate (${blocksPlacedCount}/5)`
                 }
               </span>
             </>
           )}
         </div>
 
-        {/* The Actual Progress / Meter Bar */}
+        {/* The Progress / Meter Bar */}
         <div className="w-full bg-slate-900 rounded-full h-3.5 p-0.5 border border-slate-700/80 overflow-hidden relative">
           <div
             className={`
@@ -155,7 +153,7 @@ export const StrengthMeter: React.FC<StrengthMeterProps> = ({
             }}
           />
 
-          {/* Target marker at 100 */}
+          {/* Benchmark Target at 100 */}
           <div className="absolute right-0 top-0 bottom-0 w-1 bg-cyan-300 opacity-60" />
         </div>
       </div>

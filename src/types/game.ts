@@ -11,9 +11,9 @@ export interface ManagementBlock {
   iconName: string;
   // Core management principle associated with this characteristic
   principle: string;
-  // Which pillar gets the highest baseline synergy (+20)
+  // Which pillar gets the highest baseline synergy (+18)
   primaryPillar: PillarId;
-  // Secondary pillar that also gets strong synergy (+12 to +16)
+  // Secondary pillar that also gets strong synergy (+14)
   secondaryPillars?: PillarId[];
   // If negative, which pillars suffer severe damage
   criticallyDamagedPillars?: PillarId[];
@@ -31,8 +31,6 @@ export interface OrganizationalPillarInfo {
   represents: string[];
   description: string;
 }
-
-export type GameMode = 'quick' | 'challenge' | 'repair';
 
 export type PillarPlacements = Record<PillarId, ManagementBlock[]>;
 

@@ -1,12 +1,8 @@
 import React from 'react';
-import { GameMode } from '../types/game';
-import { GAME_MODES } from '../data/scenarios';
-import { Users, Target, Lightbulb, ShieldCheck, ArrowRight, Play, Presentation, Wrench, ShieldAlert } from 'lucide-react';
+import { Users, Target, Lightbulb, ShieldCheck, ArrowRight, Presentation, Sparkles, Layers, ShieldAlert, Award } from 'lucide-react';
 
 interface LandingScreenProps {
-  onStartGame: (mode: GameMode) => void;
-  selectedMode: GameMode;
-  onSelectMode: (mode: GameMode) => void;
+  onStartGame: () => void;
   presentationMode: boolean;
   onTogglePresentationMode: () => void;
   onOpenPrinciplesModal: () => void;
@@ -14,16 +10,14 @@ interface LandingScreenProps {
 
 export const LandingScreen: React.FC<LandingScreenProps> = ({
   onStartGame,
-  selectedMode,
-  onSelectMode,
   presentationMode,
   onTogglePresentationMode,
   onOpenPrinciplesModal,
 }) => {
   return (
-    <div className="relative min-h-[90vh] flex flex-col justify-center items-center py-10 px-4">
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-cyan-600/15 via-teal-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
+    <div className="relative min-h-[85vh] flex flex-col justify-center items-center py-8 px-4 animate-fadeIn">
+      {/* Background ambient glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-gradient-to-tr from-cyan-600/15 via-teal-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 
       <div className="relative z-10 max-w-4xl w-full text-center space-y-8">
         {/* Wordmark / Logo Badge */}
@@ -78,48 +72,28 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
           </div>
         </div>
 
-        {/* Game Mode Selection */}
-        <div className="max-w-3xl mx-auto space-y-3 text-left">
-          <div className="text-xs uppercase tracking-wider text-slate-400 font-mono font-semibold text-center">
-            Select Simulation Mode:
+        {/* Challenge Briefing Card */}
+        <div className="max-w-2xl mx-auto glass-panel p-5 rounded-2xl border-cyan-500/30 text-left space-y-3">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            Simulation Overview
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {Object.values(GAME_MODES).map((mode) => {
-              const isSelected = selectedMode === mode.id;
-              return (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => onSelectMode(mode.id)}
-                  className={`
-                    p-4 rounded-2xl border text-left transition-all duration-200 relative
-                    ${isSelected
-                      ? 'bg-nexora-800 border-cyan-400 ring-2 ring-cyan-400/50 shadow-glow-cyan'
-                      : 'bg-nexora-900/60 border-slate-700 hover:border-slate-500 hover:bg-nexora-850'
-                    }
-                  `}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-sm text-white">{mode.title}</span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${isSelected ? 'bg-cyan-400/20 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>
-                      {mode.badge.split('(')[0]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {mode.description}
-                  </p>
-                </button>
-              );
-            })}
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            You are tasked with engineering <strong>NEXORA</strong> — The Human-Centred Smart Enterprise. You will select from a pool of <strong>60+ management policies</strong> and assign them to the five pillars: <em>People</em>, <em>Performance</em>, <em>Innovation</em>, <em>Purpose & Ethics</em>, and <em>Structure & Teamwork</em>.
+          </p>
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-amber-300/90 flex items-start gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+            <span>
+              <strong>Executive Warning:</strong> Deceptive corporate traps and dysfunctional practices are mixed in among best practices. All policies look legitimate until final evaluation!
+            </span>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             type="button"
-            onClick={() => onStartGame(selectedMode)}
+            onClick={onStartGame}
             className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-slate-950 font-black text-lg uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-glow-cyan flex items-center justify-center gap-3 cursor-pointer group"
           >
             <span>START BUILDING</span>
