@@ -232,7 +232,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
 
         {/* Bench Grid with 60+ cards */}
         {filteredBlocks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 max-h-[460px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 max-h-[560px] overflow-y-auto pr-2">
             {filteredBlocks.map((block) => (
               <CharacteristicBlock
                 key={block.id}

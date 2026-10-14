@@ -70,109 +70,113 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
       }}
       className={`
         relative group cursor-grab active:cursor-grabbing select-none rounded-xl transition-all duration-200
-        ${compact ? 'p-2.5' : presentationMode ? 'p-4' : 'p-3'}
+        flex flex-col justify-between
+        ${compact ? 'p-3 min-h-[90px]' : presentationMode ? 'p-4 min-h-[130px]' : 'p-3.5 min-h-[110px]'}
         ${showEvaluationState
           ? isPositive
-            ? 'bg-slate-900/90 border-2 border-emerald-500/60 shadow-glow-emerald'
-            : 'bg-red-950/80 border-2 border-red-500/70 shadow-glow-rose'
+            ? 'bg-slate-900 border-2 border-emerald-500/80 shadow-glow-emerald'
+            : 'bg-red-950/90 border-2 border-red-500/80 shadow-glow-rose'
           : isInPillar
-            ? 'bg-nexora-850/95 border-2 border-cyan-400/50 shadow-md hover:border-cyan-300'
-            : 'bg-nexora-800/90 border border-slate-700/80 hover:border-cyan-400 hover:bg-nexora-750'
+            ? 'bg-slate-900/95 border-2 border-cyan-400/60 shadow-md hover:border-cyan-300'
+            : 'bg-slate-900/90 border border-slate-700/80 hover:border-cyan-400 hover:bg-slate-850'
         }
-        ${isSelected ? 'ring-4 ring-cyan-400 shadow-glow-cyan scale-[1.02] bg-nexora-750' : ''}
+        ${isSelected ? 'ring-2 ring-cyan-400 border-cyan-400 bg-slate-850 shadow-glow-cyan scale-[1.01]' : ''}
         ${isDragging ? 'opacity-40 scale-95' : 'opacity-100'}
         shadow-sm
       `}
     >
-      {/* Top Header Badge - Fully Neutral to Prevent Revealing Traps Prior to Evaluation */}
-      <div className="flex items-center justify-between mb-1.5 gap-2">
-        <div className="flex items-center gap-1.5">
-          <span
+      <div>
+        {/* Top Header Badge */}
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`
+                text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded
+                ${showEvaluationState
+                  ? isPositive
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50 flex items-center gap-1'
+                    : 'bg-red-950 text-red-300 border border-red-500/50 flex items-center gap-1'
+                  : 'bg-slate-800 text-cyan-300 border border-slate-700'
+                }
+              `}
+            >
+              {showEvaluationState ? (
+                isPositive ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> #{formattedNumber} Best Practice
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" /> #{formattedNumber} Hidden Trap
+                  </>
+                )
+              ) : (
+                `#${formattedNumber} Option`
+              )}
+            </span>
+          </div>
+
+          {isInPillar && onRemove ? (
+            <button
+              type="button"
+              onClick={handleRemove}
+              title="Remove option back to pool"
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : isSelected ? (
+            <span className="flex items-center gap-1 text-xs font-bold text-cyan-300 animate-pulse">
+              Selected <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          ) : null}
+        </div>
+
+        {/* Title and Icon Row */}
+        <div className="flex items-start gap-2.5">
+          <div
             className={`
-              text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded
+              p-2 rounded-lg shrink-0 mt-0.5
               ${showEvaluationState
                 ? isPositive
-                  ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 flex items-center gap-1'
-                  : 'bg-red-950/90 text-red-300 border border-red-500/40 flex items-center gap-1'
-                : 'bg-slate-900/90 text-cyan-300 border border-slate-700/70'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : 'bg-red-500/20 text-red-300 border border-red-500/40'
+                : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
               }
             `}
           >
-            {showEvaluationState ? (
-              isPositive ? (
-                <>
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> #{formattedNumber} Best Practice
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="w-3 h-3 text-red-400" /> #{formattedNumber} Hidden Trap
-                </>
-              )
-            ) : (
-              `#${formattedNumber} Strategic Option`
-            )}
-          </span>
-        </div>
+            <DynamicIcon name={block.iconName} className="w-4 h-4" />
+          </div>
 
-        {isInPillar && onRemove ? (
-          <button
-            type="button"
-            onClick={handleRemove}
-            title="Remove block back to bench"
-            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        ) : isSelected ? (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-cyan-300 animate-pulse">
-            Active <ArrowRight className="w-3 h-3" />
-          </span>
-        ) : null}
-      </div>
-
-      {/* Main Title & Icon */}
-      <div className="flex items-start gap-2.5">
-        <div
-          className={`
-            p-2 rounded-lg shrink-0 mt-0.5
-            ${showEvaluationState
-              ? isPositive
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                : 'bg-red-500/10 text-red-400 border border-red-500/30'
-              : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-            }
-          `}
-        >
-          <DynamicIcon name={block.iconName} className="w-4 h-4" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h4
-            className={`
-              font-semibold leading-snug tracking-tight truncate
-              ${presentationMode ? 'text-base font-bold' : 'text-sm'}
-              ${showEvaluationState && !isPositive ? 'text-red-200' : 'text-slate-100'}
-            `}
-            title={block.title}
-          >
-            {block.title}
-          </h4>
-          <p
-            className={`
-              text-slate-400 mt-1 line-clamp-2 leading-relaxed
-              ${presentationMode ? 'text-xs' : 'text-[11px]'}
-            `}
-          >
-            {block.description}
-          </p>
+          <div className="min-w-0 flex-1">
+            <h4
+              className={`
+                font-bold leading-snug break-words
+                ${presentationMode ? 'text-base text-white' : 'text-sm text-slate-100'}
+                ${showEvaluationState && !isPositive ? 'text-red-100' : 'text-white'}
+              `}
+            >
+              {block.title}
+            </h4>
+            
+            {/* High-Contrast Description */}
+            <p
+              className={`
+                mt-1.5 leading-relaxed text-slate-300 font-normal break-words
+                ${presentationMode ? 'text-xs' : 'text-[12px]'}
+              `}
+            >
+              {block.description}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Selection helper bar */}
       {isSelected && (
-        <div className="mt-2 pt-2 border-t border-cyan-500/30 flex items-center justify-between text-[11px] text-cyan-300 font-medium">
+        <div className="mt-2.5 pt-2 border-t border-cyan-500/40 flex items-center justify-between text-xs text-cyan-300 font-semibold">
           <span>Tap any pillar above to place</span>
-          <span className="px-1.5 py-0.5 bg-cyan-500/20 rounded text-[10px]">Ready</span>
+          <span className="px-2 py-0.5 bg-cyan-500/20 rounded text-[11px] font-mono">Ready</span>
         </div>
       )}
     </div>
