@@ -22,7 +22,6 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
     let pillarScore = 0;
     let hasRisk = false;
     let primaryMatchFound = false;
-    let negativeBlockFound: ManagementBlock | null = null;
 
     if (blocks.length === 0) {
       pillarScore = 0;
@@ -59,10 +58,9 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
             pillarScore += 7;
           }
         } else {
-          // Negative block
+          // Negative block (Trap)
           negativeBlocksCount++;
           hasRisk = true;
-          negativeBlockFound = block;
 
           const isCritical = block.criticallyDamagedPillars?.includes(pillar.id);
           const penalty = isCritical ? 18 : 12;
@@ -112,27 +110,27 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
   // Calculate Synergy Bonuses
   let synergyBonus = 0;
   
-  // Synergy 1: People + Structure alignment (Participative Leadership/Employee Dev + Open Communication/Cross Collaboration)
+  // Synergy 1: People + Structure alignment (Participative Leadership/Mentorship/Autonomy + Cross-Functional Pods/Transparent Wikis)
   const peopleBlocks = placements['people'] || [];
   const structureBlocks = placements['structure'] || [];
-  const hasHumanLeadership = peopleBlocks.some(b => b.id === 'b2-participative-leadership' || b.id === 'b6-employee-development');
-  const hasTeamwork = structureBlocks.some(b => b.id === 'b3-open-communication' || b.id === 'b8-cross-functional-collaboration');
+  const hasHumanLeadership = peopleBlocks.some(b => b.type === 'positive');
+  const hasTeamwork = structureBlocks.some(b => b.type === 'positive');
   if (hasHumanLeadership && hasTeamwork) {
     synergyBonus += 3;
   }
 
-  // Synergy 2: Performance + Innovation alignment (Clear Planning/Data + Innovation)
+  // Synergy 2: Performance + Innovation alignment (Roadmaps/Data/Lean + Sandboxes/Fast-Fail/Agile)
   const perfBlocks = placements['performance'] || [];
   const innovBlocks = placements['innovation'] || [];
-  const hasRigorousPlanning = perfBlocks.some(b => b.id === 'b1-clear-planning' || b.id === 'b10-data-informed-decisions');
-  const hasAgileInnovation = innovBlocks.some(b => b.id === 'b5-innovation-adaptability');
+  const hasRigorousPlanning = perfBlocks.some(b => b.type === 'positive');
+  const hasAgileInnovation = innovBlocks.some(b => b.type === 'positive');
   if (hasRigorousPlanning && hasAgileInnovation) {
     synergyBonus += 3;
   }
 
-  // Synergy 3: Purpose integrity (Ethical Decision Making or Sustainability on Purpose)
+  // Synergy 3: Purpose integrity (Ethical Reviews / ESG / Whistleblower / Stakeholder Model)
   const purposeBlocks = placements['purpose'] || [];
-  const hasPurposeCore = purposeBlocks.some(b => b.id === 'b7-ethical-decision-making' || b.id === 'b9-sustainability');
+  const hasPurposeCore = purposeBlocks.some(b => b.type === 'positive');
   if (hasPurposeCore) {
     synergyBonus += 2;
   }
@@ -144,12 +142,12 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
   // Calculate final score (0 to 100)
   let rawTotal = totalRawPillarScore + (negativeBlocksCount === 0 ? (synergyBonus + balanceBonus) : 0);
   
-  // If user placed 5 optimal blocks in all 5 pillars with no negatives: exact 100
+  // Perfect ideal condition: all 5 pillars have an optimal primary positive match AND ZERO negative blocks placed
   const isPerfectIdeal = PILLARS.every(pillar => {
     const blocks = placements[pillar.id] || [];
     return blocks.some(b => b.primaryPillar === pillar.id && b.type === 'positive') &&
            blocks.every(b => b.type === 'positive');
-  });
+  }) && negativeBlocksCount === 0;
 
   let overallScore = isPerfectIdeal ? 100 : Math.min(99, Math.max(0, rawTotal));
 
@@ -159,19 +157,19 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
 
   if (overallScore < 40) {
     statusTier = 'UNSTABLE ORGANIZATION';
-    tierDescription = 'Critical structural vulnerabilities detected. Harmful practices or major operational gaps threaten enterprise stability and workforce morale.';
+    tierDescription = 'Critical structural vulnerabilities detected. Harmful management traps or major operational voids threaten enterprise survival and workforce stability.';
   } else if (overallScore < 60) {
     statusTier = 'DEVELOPING ORGANIZATION';
-    tierDescription = 'Foundational practices are emerging, but fragmented execution and misaligned pillars inhibit full organizational velocity.';
+    tierDescription = 'Foundational practices are emerging, but fragmented execution, misaligned policies, or latent risks prevent peak organizational velocity.';
   } else if (overallScore < 80) {
     statusTier = 'EFFECTIVE ORGANIZATION';
-    tierDescription = 'Solid operational coordination with clear management competence across core areas. Minor fine-tuning needed for peak agility.';
+    tierDescription = 'Solid operational coordination with clear management competence across core areas. Minor fine-tuning needed for full enterprise synergy.';
   } else if (overallScore < 100) {
     statusTier = 'HIGH-PERFORMING ORGANIZATION';
-    tierDescription = 'Exemplary synergy across people, processes, and strategic goals. Highly resilient, purpose-driven, and competitively positioned.';
+    tierDescription = 'Exemplary synergy across people, processes, and strategic goals. Highly resilient, purpose-driven, and competitively positioned in the marketplace.';
   } else {
     statusTier = 'IDEAL ORGANIZATION ACHIEVED';
-    tierDescription = 'Masterclass in organizational architecture. Flawless balance of human empowerment, agile innovation, operational rigor, and ethical purpose!';
+    tierDescription = 'Masterclass in organizational architecture! Flawless balance of human empowerment, disciplined performance, agile innovation, ethical purpose, and collaborative teamwork!';
   }
 
   // Identify strongest and weakest pillars
@@ -207,103 +205,47 @@ export function calculateOrganizationEvaluation(placements: PillarPlacements): O
 function generatePillarFeedback(pillarId: PillarId, blocks: ManagementBlock[]): { feedback: string; principle: string; suggestion: string } {
   if (blocks.length === 0) {
     return {
-      feedback: 'This pillar currently has no allocated management characteristics. An unmanaged pillar creates operational blind spots.',
-      principle: 'Organizational Completeness & Balanced Scorecard',
-      suggestion: `Assign a dedicated management block such as ${getRecommendedBlockTitle(pillarId)} to anchor this pillar.`
+      feedback: 'This pillar currently has no allocated management policies. An unmanaged pillar creates operational blind spots.',
+      principle: 'Organizational Completeness & Balanced Scorecard (Kaplan & Norton)',
+      suggestion: `Assign a dedicated strategic practice into ${pillarId.toUpperCase()} to establish its operational foundation.`
     };
   }
 
-  const primaryBlock = blocks[0];
-
-  // Specific feedback combinations as required by prompt
-  if (primaryBlock.id === 'b11-excessive-micromanagement') {
+  // Check if any negative trap was placed
+  const trap = blocks.find(b => b.type === 'negative');
+  if (trap) {
     return {
-      feedback: 'Your organization may struggle with employee autonomy and motivation. Excessive supervision can discourage initiative and reduce employee ownership.',
-      principle: 'Leadership Styles & Motivation Theory (Herzberg / McGregor Theory Y)',
-      suggestion: 'Replace excessive micromanagement with participative leadership, clear responsibilities, and regular feedback.'
+      feedback: `Warning: "${trap.title}" is a deceptive management trap! ${trap.negativeImpactReason || 'It introduces hidden friction and undermines performance.'}`,
+      principle: trap.principle,
+      suggestion: `Replace "${trap.title}" with a healthy, empowering management policy that aligns with ${pillarId.toUpperCase()}.`
     };
   }
 
-  if (primaryBlock.id === 'b8-cross-functional-collaboration' && pillarId === 'structure') {
+  // Check best positive match
+  const primaryMatch = blocks.find(b => b.primaryPillar === pillarId && b.type === 'positive');
+  if (primaryMatch) {
     return {
-      feedback: 'Excellent choice! Cross-functional collaboration helps departments coordinate their expertise and work toward shared objectives.',
-      principle: 'Coordination and Matrix Organizational Design',
-      suggestion: 'Maintain open communication channels to support joint cross-departmental initiatives.'
+      feedback: `Outstanding alignment! "${primaryMatch.title}" directly reinforces the core mandate of ${pillarId.toUpperCase()}. ${primaryMatch.positiveImpactReason}`,
+      principle: primaryMatch.principle,
+      suggestion: 'Excellent selection. Ensure this practice is reinforced by leadership and transparent company-wide norms.'
     };
   }
 
-  if (primaryBlock.id === 'b1-clear-planning' && pillarId === 'performance') {
+  const secondaryMatch = blocks.find(b => b.secondaryPillars?.includes(pillarId) && b.type === 'positive');
+  if (secondaryMatch) {
     return {
-      feedback: 'Strong choice. Clear objectives and resource allocation help the organization coordinate activities and evaluate progress.',
-      principle: 'Planning and Performance Management (SMART Goals)',
-      suggestion: 'Pair clear planning with data-informed decisions for continuous feedback loops.'
+      feedback: `Valuable complementary practice. While "${secondaryMatch.title}" primarily targets ${secondaryMatch.primaryPillar.toUpperCase()}, it generates beneficial positive spillover here.`,
+      principle: secondaryMatch.principle,
+      suggestion: `Consider anchoring this pillar with a primary ${pillarId.toUpperCase()} capability for maximum impact.`
     };
   }
 
-  if (primaryBlock.id === 'b12-departmental-silos') {
-    return {
-      feedback: 'Departmental silos create severe friction, hoard information, and prevent collaborative synergy across business units.',
-      principle: 'Organizational Integration & Systemic Thinking',
-      suggestion: 'Dismantle silos by instituting cross-functional project teams and shared performance indicators.'
-    };
-  }
-
-  if (primaryBlock.id === 'b13-unclear-objectives') {
-    return {
-      feedback: 'Without clear objectives, team members pull in conflicting directions, wasting resources and eroding organizational momentum.',
-      principle: 'Strategic Goal Formulation & Management by Objectives (MBO)',
-      suggestion: 'Establish transparent, measurable key performance indicators (KPIs) and align individual roles with company mission.'
-    };
-  }
-
-  if (primaryBlock.id === 'b14-poor-communication') {
-    return {
-      feedback: 'Information bottlenecks and non-transparent communication breed mistrust, errors, and uncoordinated operational delays.',
-      principle: 'Managerial Communication Channels & Feedback Loops',
-      suggestion: 'Cultivate open communication norms with transparent Town Halls, agile standups, and psychological safety.'
-    };
-  }
-
-  if (primaryBlock.id === 'b15-no-accountability') {
-    return {
-      feedback: 'Absence of accountability leads to missed deliverables, demotivates high performers, and normalizes low operational quality.',
-      principle: 'Managerial Control Systems & Responsibility Accounting',
-      suggestion: 'Define distinct roles, establish regular progress audits, and celebrate accountable performance.'
-    };
-  }
-
-  // Positive placements
-  if (primaryBlock.primaryPillar === pillarId) {
-    return {
-      feedback: `Outstanding alignment! "${primaryBlock.title}" directly reinforces the core mandate of ${pillarId.toUpperCase()}. ${primaryBlock.positiveImpactReason}`,
-      principle: primaryBlock.principle,
-      suggestion: 'Great choice. Ensure this practice is reinforced consistently by leadership and internal policies.'
-    };
-  }
-
-  if (primaryBlock.secondaryPillars?.includes(pillarId)) {
-    return {
-      feedback: `Valuable complementary practice. While "${primaryBlock.title}" primarily targets ${primaryBlock.primaryPillar.toUpperCase()}, it provides healthy positive spillover here.`,
-      principle: primaryBlock.principle,
-      suggestion: `Consider placing ${getRecommendedBlockTitle(pillarId)} here for the absolute maximum organizational impact.`
-    };
-  }
-
+  const generalBlock = blocks[0];
   return {
-    feedback: `"${primaryBlock.title}" is a positive practice, but its impact on ${pillarId.toUpperCase()} is peripheral rather than foundational.`,
-    principle: primaryBlock.principle,
-    suggestion: `Reallocate "${primaryBlock.title}" to its primary home and place ${getRecommendedBlockTitle(pillarId)} into this pillar.`
+    feedback: `"${generalBlock.title}" is a positive practice, but its impact on ${pillarId.toUpperCase()} is peripheral rather than foundational.`,
+    principle: generalBlock.principle,
+    suggestion: `Reallocate "${generalBlock.title}" to its primary domain and select a practice specifically tailored to ${pillarId.toUpperCase()}.`
   };
-}
-
-function getRecommendedBlockTitle(pillarId: PillarId): string {
-  switch (pillarId) {
-    case 'people': return '"Participative Leadership" or "Employee Development"';
-    case 'performance': return '"Clear Planning" or "Data-Informed Decisions"';
-    case 'innovation': return '"Innovation and Adaptability"';
-    case 'purpose': return '"Ethical Decision-Making" or "Sustainability"';
-    case 'structure': return '"Cross-Functional Collaboration" or "Open Communication"';
-  }
 }
 
 function generateRecommendations(evaluations: Record<PillarId, PillarEvaluation>): string[] {
@@ -313,9 +255,9 @@ function generateRecommendations(evaluations: Record<PillarId, PillarEvaluation>
     const evaluation = evaluations[p.id];
     if (!evaluation || evaluation.score < 14) {
       if (evaluation?.hasRisk) {
-        recommendations.push(`Urgent: Remove toxic management practices from ${p.title}. ${evaluation.suggestion}`);
+        recommendations.push(`Critical Priority: Eliminate counterproductive corporate traps in ${p.title}. ${evaluation.suggestion}`);
       } else if (evaluation?.placedBlocks.length === 0) {
-        recommendations.push(`Empower ${p.title} by assigning an anchor practice like ${getRecommendedBlockTitle(p.id)}.`);
+        recommendations.push(`Assign foundational strategic policies to empower ${p.title}.`);
       } else {
         recommendations.push(`Optimize ${p.title}: ${evaluation?.suggestion || 'Align with dedicated strategic practices.'}`);
       }
@@ -323,7 +265,7 @@ function generateRecommendations(evaluations: Record<PillarId, PillarEvaluation>
   });
 
   if (recommendations.length === 0) {
-    recommendations.push('Maintain cross-pillar balance and conduct continuous organizational learning sessions to keep NEXORA at peak performance.');
+    recommendations.push('Maintain cross-pillar synergy and conduct regular organizational learning audits to keep NEXORA at peak performance.');
   }
 
   return recommendations;

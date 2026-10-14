@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { OverallEvaluation, PillarId } from '../types/game';
 import { PILLARS } from '../data/pillars';
 import { DynamicIcon } from './DynamicIcon';
-import { CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, BookOpen, Lightbulb } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, BookOpen, Lightbulb, ShieldCheck } from 'lucide-react';
 
 interface EvaluationPanelProps {
   evaluation: OverallEvaluation;
@@ -117,8 +117,40 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
               {/* Expanded Detailed Breakdown */}
               {isExpanded && (
                 <div className="p-4 pt-2 border-t border-slate-800/80 space-y-3 bg-slate-950/40 text-xs leading-relaxed">
+                  {/* Revealed Placed Decisions */}
+                  <div className="space-y-1.5">
+                    <div className="font-semibold text-slate-300 text-xs">
+                      Assigned Strategic Policies:
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {evalItem.placedBlocks.map((b) => {
+                        const isGood = b.type === 'positive';
+                        return (
+                          <div
+                            key={b.id}
+                            className={`
+                              p-2.5 rounded-xl border flex items-center justify-between gap-2
+                              ${isGood
+                                ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
+                                : 'bg-red-950/40 border-red-500/40 text-red-200'
+                              }
+                            `}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <DynamicIcon name={b.iconName} className="w-4 h-4 shrink-0" />
+                              <span className="font-semibold truncate">{b.title}</span>
+                            </div>
+                            <span className="text-[10px] font-bold uppercase shrink-0 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700">
+                              {isGood ? 'Best Practice' : 'Hidden Trap'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Feedback Explanation */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 pt-1">
                     <div className="font-semibold text-slate-300 flex items-center gap-1.5 text-xs">
                       {hasRisk ? (
                         <AlertTriangle className="w-3.5 h-3.5 text-red-400" />

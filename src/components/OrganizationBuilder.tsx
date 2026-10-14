@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ManagementBlock, PillarId, PillarPlacements, OverallEvaluation, GameMode } from '../types/game';
 import { PILLARS } from '../data/pillars';
 import { OrganizationPillar } from './OrganizationPillar';
@@ -9,14 +9,12 @@ import { GAME_MODES } from '../data/scenarios';
 import { 
   Building2, 
   RotateCcw, 
-  Play, 
   CheckCircle2, 
   Layers, 
-  Filter, 
-  AlertCircle,
-  HelpCircle,
+  Search,
+  X,
   ArrowRight,
-  Sparkles
+  Filter
 } from 'lucide-react';
 
 interface OrganizationBuilderProps {
@@ -46,7 +44,8 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
   currentMode,
   presentationMode,
 }) => {
-  const [filterType, setFilterType] = useState<'all' | 'positive' | 'negative'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | PillarId>('all');
 
   const modeConfig = GAME_MODES[currentMode];
 
@@ -61,11 +60,26 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
 
   const canEvaluate = totalBlocksPlaced >= 5;
 
-  const filteredAvailableBlocks = availableBlocks.filter(b => {
-    if (filterType === 'positive') return b.type === 'positive';
-    if (filterType === 'negative') return b.type === 'negative';
-    return true;
-  });
+  // Filter available blocks
+  const filteredBlocks = useMemo(() => {
+    return availableBlocks.filter(block => {
+      // Category filter based on primary alignment
+      if (categoryFilter !== 'all') {
+        const matchesCategory = block.primaryPillar === categoryFilter || block.secondaryPillars?.includes(categoryFilter);
+        if (!matchesCategory) return false;
+      }
+
+      // Search query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesTitle = block.title.toLowerCase().includes(q);
+        const matchesDesc = block.description.toLowerCase().includes(q);
+        return matchesTitle || matchesDesc;
+      }
+
+      return true;
+    });
+  }, [availableBlocks, categoryFilter, searchQuery]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -73,7 +87,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
       <div className="text-center space-y-1">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-cyan-500/30 text-[11px] font-mono uppercase tracking-widest text-cyan-400">
           <Building2 className="w-3.5 h-3.5" />
-          Interactive Construction Area
+          Strategic Organizational Simulation Lab
         </div>
 
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white uppercase font-display">
@@ -93,7 +107,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
         presentationMode={presentationMode}
       />
 
-      {/* Interactive Live Blueprint Network */}
+      {/* Interactive Blueprint Network */}
       <OrganizationBlueprint
         placements={placements}
         presentationMode={presentationMode}
@@ -108,7 +122,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
               The Five Organizational Pillars
             </h2>
             <p className="text-xs text-slate-400">
-              Drag characteristic blocks from the bench below or click to place
+              Assign strategic decisions into pillars. Beware: deceptive management traps are hidden among best practices!
             </p>
           </div>
 
@@ -125,7 +139,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
           </div>
         </div>
 
-        {/* 5 Pillar Grid */}
+        {/* 5 Pillar Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5">
           {PILLARS.map((pillar) => (
             <OrganizationPillar
@@ -137,6 +151,7 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
               onSelectPillar={onSelectPillar}
               onRemoveBlock={onRemoveBlock}
               presentationMode={presentationMode}
+              showEvaluationState={false}
             />
           ))}
         </div>
@@ -144,81 +159,108 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
 
       {/* Management Characteristic Blocks Bench */}
       <div className="glass-panel p-5 rounded-3xl border-cyan-500/20 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div>
             <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <span>Management Characteristic Blocks</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-normal">
-                {availableBlocks.length} Available
+              <span>Management Decision Pool</span>
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-normal">
+                {availableBlocks.length} Options Available
               </span>
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 mt-0.5">
               {selectedBlock
                 ? `Selected: "${selectedBlock.title}" — Click on any pillar above to assign!`
-                : 'Click a block to select, or drag directly into a pillar'
+                : 'Select or drag any management policy into the appropriate organizational pillar.'
               }
             </p>
           </div>
 
-          {/* Filters & Helpers */}
-          <div className="flex items-center gap-2">
+          {/* Search bar & Category filter */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative min-w-[200px] sm:min-w-[240px]">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search policies & practices..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
             {selectedBlock && (
               <button
                 type="button"
                 onClick={() => onSelectBlock(null)}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs border border-slate-700"
               >
                 Deselect
               </button>
             )}
-
-            <div className="flex items-center rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs">
-              <button
-                type="button"
-                onClick={() => setFilterType('all')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${filterType === 'all' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-white'}`}
-              >
-                All ({availableBlocks.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterType('positive')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${filterType === 'positive' ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-400 hover:text-white'}`}
-              >
-                Practices
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterType('negative')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${filterType === 'negative' ? 'bg-red-500/20 text-red-300' : 'text-slate-400 hover:text-white'}`}
-              >
-                Traps
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Bench Grid */}
-        {filteredAvailableBlocks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 max-h-[360px] overflow-y-auto pr-1">
-            {filteredAvailableBlocks.map((block) => (
+        {/* Category Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-slate-400 font-mono text-[11px] mr-1 flex items-center gap-1">
+            <Filter className="w-3 h-3 text-cyan-400" /> Focus Area:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={`px-3 py-1 rounded-lg font-medium transition-colors ${categoryFilter === 'all' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-900 text-slate-400 hover:text-white'}`}
+          >
+            All Areas ({availableBlocks.length})
+          </button>
+
+          {PILLARS.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setCategoryFilter(p.id)}
+              className={`px-3 py-1 rounded-lg font-medium transition-colors ${categoryFilter === p.id ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-900 text-slate-400 hover:text-white'}`}
+            >
+              {p.title}
+            </button>
+          ))}
+        </div>
+
+        {/* Bench Grid with 60+ cards */}
+        {filteredBlocks.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 max-h-[460px] overflow-y-auto pr-1">
+            {filteredBlocks.map((block) => (
               <CharacteristicBlock
                 key={block.id}
                 block={block}
                 isSelected={selectedBlock?.id === block.id}
                 onSelect={(b) => onSelectBlock(selectedBlock?.id === b.id ? null : b)}
                 presentationMode={presentationMode}
+                showEvaluationState={false}
               />
             ))}
           </div>
         ) : (
           <div className="p-8 text-center text-slate-500 text-sm">
-            All available characteristic blocks have been deployed into the pillars!
+            {searchQuery || categoryFilter !== 'all'
+              ? 'No management options match your current filter. Try clearing the search or category.'
+              : 'All available characteristic blocks have been deployed into the pillars!'
+            }
           </div>
         )}
       </div>
 
-      {/* Sticky / Prominent Bottom Evaluation Trigger Bar */}
+      {/* Sticky Bottom Evaluation Trigger Bar */}
       <div className="sticky bottom-4 z-40 p-4 rounded-2xl glass-panel bg-nexora-900/95 border-2 border-cyan-400/50 shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div
@@ -236,8 +278,8 @@ export const OrganizationBuilder: React.FC<OrganizationBuilderProps> = ({
             </div>
             <div className="text-xs text-slate-400">
               {canEvaluate
-                ? `${totalBlocksPlaced} management blocks deployed across ${pillarsCompletedCount}/5 pillars.`
-                : `Place at least 5 blocks across pillars to evaluate (${totalBlocksPlaced}/5 placed).`
+                ? `${totalBlocksPlaced} management options placed across ${pillarsCompletedCount}/5 pillars.`
+                : `Place at least 5 management options across pillars to evaluate (${totalBlocksPlaced}/5 placed).`
               }
             </div>
           </div>

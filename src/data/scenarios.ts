@@ -17,11 +17,11 @@ export const GAME_MODES: Record<GameMode, GameModeConfig> = {
   quick: {
     id: 'quick',
     title: 'Quick Build',
-    badge: 'Fast-Paced (~2 min)',
+    badge: 'Fast (~2 min)',
     durationMinutes: 2,
-    description: 'Select and place the single best management characteristic for each of NEXORA’s five organizational pillars.',
-    objective: 'Build a well-rounded foundation by matching five core management practices to their ideal pillars.',
-    targetAudience: 'Ideal for rapid class demonstrations and quick concept tests.',
+    description: 'Select the optimal management policies for each of NEXORA’s five organizational pillars from a curated set of practices and hidden pitfalls.',
+    objective: 'Build a well-rounded foundation by discerning high-impact practices from common corporate traps.',
+    targetAudience: 'Ideal for rapid classroom demonstrations and fast interactive polling.',
     initialPlacements: {
       people: [],
       performance: [],
@@ -29,27 +29,42 @@ export const GAME_MODES: Record<GameMode, GameModeConfig> = {
       purpose: [],
       structure: []
     },
-    // Curated high-impact positive blocks
+    // Curated 25 diverse options (both high-leverage and disguised traps)
     availableBlockIds: [
-      'b1-clear-planning',
-      'b2-participative-leadership',
-      'b3-open-communication',
-      'b4-accountability',
-      'b5-innovation-adaptability',
-      'b6-employee-development',
-      'b7-ethical-decision-making',
-      'b8-cross-functional-collaboration',
-      'b9-sustainability',
-      'b10-data-informed-decisions'
+      'p1-participative-leadership',
+      'p2-mentorship-cadence',
+      'p3-psychological-safety',
+      'p4-workplace-autonomy',
+      'p9-excessive-micromanagement',
+      'p10-stack-ranking',
+      'f1-clear-strategic-roadmaps',
+      'f2-smart-kpi-cascading',
+      'f3-data-informed-analytics',
+      'f5-lean-process-optimization',
+      'f9-unclear-objectives',
+      'f11-zero-tolerance-failure',
+      'i1-dedicated-rd-sandbox',
+      'i2-fast-failure-experimentation',
+      'i4-agile-sprint-cycles',
+      'i9-departmental-silos',
+      'i12-bureaucratic-committees',
+      'e1-ethical-governance-framework',
+      'e2-esg-supply-chain',
+      'e4-whistleblower-fortress',
+      'e8-greenwashing-campaigns',
+      's1-cross-functional-pods',
+      's2-transparent-documentation',
+      's5-raci-governance-clarity',
+      's8-departmental-turf-wars'
     ]
   },
   challenge: {
     id: 'challenge',
-    title: 'Management Challenge',
-    badge: 'Strategic (~4 min)',
-    durationMinutes: 4,
-    description: 'Face the full managerial reality. Navigate a mixed pool of both high-leverage practices and deceptive, toxic organizational traps.',
-    objective: 'Discern positive drivers from counterproductive pitfalls, placing optimal practices to maximize enterprise effectiveness.',
+    title: 'Executive Challenge (Full 63 Options)',
+    badge: 'Strategic (~5 min)',
+    durationMinutes: 5,
+    description: 'The ultimate management test. Choose from over 60 realistic corporate policies, culture frameworks, and operational strategies.',
+    objective: 'Discern positive drivers from counterproductive pitfalls, placing optimal practices to maximize enterprise effectiveness without falling for disguised corporate traps.',
     targetAudience: 'Comprehensive classroom challenge evaluating critical management judgment.',
     initialPlacements: {
       people: [],
@@ -58,37 +73,26 @@ export const GAME_MODES: Record<GameMode, GameModeConfig> = {
       purpose: [],
       structure: []
     },
-    // All 15 blocks
+    // All 63 blocks!
     availableBlockIds: MANAGEMENT_BLOCKS.map(b => b.id)
   },
   repair: {
     id: 'repair',
     title: 'Repair The Organization',
-    badge: 'Crisis Turnaround (~3 min)',
-    durationMinutes: 3,
-    description: 'NEXORA is in an operational crisis plagued by micromanagement, silos, and no accountability. Diagnose the damage and replace toxic practices.',
-    objective: 'Identify and remove all 5 dysfunctional management practices and substitute them with high-performing management principles.',
+    badge: 'Turnaround (~4 min)',
+    durationMinutes: 4,
+    description: 'NEXORA is in an operational crisis plagued by micromanagement, silos, shifting directives, greenwashing, and departmental turf wars. Diagnose and replace toxic policies.',
+    objective: 'Identify and remove all dysfunctional management practices and substitute them with high-performing management principles from the 60+ options.',
     targetAudience: 'Great for learning root-cause analysis and turnaround management.',
-    // Pre-loaded broken state!
+    // Pre-loaded broken state
     initialPlacements: {
-      people: [MANAGEMENT_BLOCKS.find(b => b.id === 'b11-excessive-micromanagement')!],
-      performance: [MANAGEMENT_BLOCKS.find(b => b.id === 'b13-unclear-objectives')!],
-      innovation: [MANAGEMENT_BLOCKS.find(b => b.id === 'b12-departmental-silos')!],
-      purpose: [MANAGEMENT_BLOCKS.find(b => b.id === 'b15-no-accountability')!],
-      structure: [MANAGEMENT_BLOCKS.find(b => b.id === 'b14-poor-communication')!]
+      people: [MANAGEMENT_BLOCKS.find(b => b.id === 'p9-excessive-micromanagement')!],
+      performance: [MANAGEMENT_BLOCKS.find(b => b.id === 'f9-unclear-objectives')!],
+      innovation: [MANAGEMENT_BLOCKS.find(b => b.id === 'i9-departmental-silos')!],
+      purpose: [MANAGEMENT_BLOCKS.find(b => b.id === 'e8-greenwashing-campaigns')!],
+      structure: [MANAGEMENT_BLOCKS.find(b => b.id === 's8-departmental-turf-wars')!]
     },
-    // Available bench blocks to rescue the organization
-    availableBlockIds: [
-      'b1-clear-planning',
-      'b2-participative-leadership',
-      'b3-open-communication',
-      'b4-accountability',
-      'b5-innovation-adaptability',
-      'b6-employee-development',
-      'b7-ethical-decision-making',
-      'b8-cross-functional-collaboration',
-      'b9-sustainability',
-      'b10-data-informed-decisions'
-    ]
+    // Available bench blocks to rescue the organization (all remaining 58 blocks)
+    availableBlockIds: MANAGEMENT_BLOCKS.map(b => b.id)
   }
 };

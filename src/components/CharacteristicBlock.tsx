@@ -1,7 +1,7 @@
 import React from 'react';
 import { ManagementBlock, PillarId } from '../types/game';
 import { DynamicIcon } from './DynamicIcon';
-import { X, Sparkles, AlertOctagon, Check, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface CharacteristicBlockProps {
   block: ManagementBlock;
@@ -13,6 +13,7 @@ interface CharacteristicBlockProps {
   onRemove?: (block: ManagementBlock, pillarId?: PillarId) => void;
   compact?: boolean;
   presentationMode?: boolean;
+  showEvaluationState?: boolean; // Only revealed after evaluation!
 }
 
 export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
@@ -25,6 +26,7 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
   onRemove,
   compact = false,
   presentationMode = false,
+  showEvaluationState = false,
 }) => {
   const isPositive = block.type === 'positive';
 
@@ -50,6 +52,9 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
     }
   };
 
+  // Format block number with leading zero
+  const formattedNumber = String(block.blockNumber).padStart(2, '0');
+
   return (
     <div
       draggable
@@ -65,33 +70,47 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
       }}
       className={`
         relative group cursor-grab active:cursor-grabbing select-none rounded-xl transition-all duration-200
-        ${compact ? 'p-2.5' : presentationMode ? 'p-4' : 'p-3.5'}
-        ${isInPillar
+        ${compact ? 'p-2.5' : presentationMode ? 'p-4' : 'p-3'}
+        ${showEvaluationState
           ? isPositive
-            ? 'bg-slate-900/90 border-2 border-emerald-500/50 hover:border-emerald-400 shadow-sm'
-            : 'bg-red-950/80 border-2 border-red-500/60 hover:border-red-400 shadow-sm'
-          : isPositive
-            ? 'bg-nexora-800/90 border border-cyan-500/30 hover:border-cyan-400 hover:bg-nexora-750'
-            : 'bg-slate-900/90 border border-amber-600/40 hover:border-amber-400 hover:bg-amber-950/40'
+            ? 'bg-slate-900/90 border-2 border-emerald-500/60 shadow-glow-emerald'
+            : 'bg-red-950/80 border-2 border-red-500/70 shadow-glow-rose'
+          : isInPillar
+            ? 'bg-nexora-850/95 border-2 border-cyan-400/50 shadow-md hover:border-cyan-300'
+            : 'bg-nexora-800/90 border border-slate-700/80 hover:border-cyan-400 hover:bg-nexora-750'
         }
         ${isSelected ? 'ring-4 ring-cyan-400 shadow-glow-cyan scale-[1.02] bg-nexora-750' : ''}
         ${isDragging ? 'opacity-40 scale-95' : 'opacity-100'}
-        shadow-md
+        shadow-sm
       `}
     >
-      {/* Top badges */}
+      {/* Top Header Badge - Fully Neutral to Prevent Revealing Traps Prior to Evaluation */}
       <div className="flex items-center justify-between mb-1.5 gap-2">
         <div className="flex items-center gap-1.5">
           <span
             className={`
-              text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded
-              ${isPositive
-                ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/30'
-                : 'bg-red-950/90 text-red-300 border border-red-500/30'
+              text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded
+              ${showEvaluationState
+                ? isPositive
+                  ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 flex items-center gap-1'
+                  : 'bg-red-950/90 text-red-300 border border-red-500/40 flex items-center gap-1'
+                : 'bg-slate-900/90 text-cyan-300 border border-slate-700/70'
               }
             `}
           >
-            #{block.blockNumber} {isPositive ? 'Practice' : 'Trap'}
+            {showEvaluationState ? (
+              isPositive ? (
+                <>
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> #{formattedNumber} Best Practice
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-3 h-3 text-red-400" /> #{formattedNumber} Hidden Trap
+                </>
+              )
+            ) : (
+              `#${formattedNumber} Strategic Option`
+            )}
           </span>
         </div>
 
@@ -116,9 +135,11 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
         <div
           className={`
             p-2 rounded-lg shrink-0 mt-0.5
-            ${isPositive
-              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            ${showEvaluationState
+              ? isPositive
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                : 'bg-red-500/10 text-red-400 border border-red-500/30'
+              : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
             }
           `}
         >
@@ -130,7 +151,7 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
             className={`
               font-semibold leading-snug tracking-tight truncate
               ${presentationMode ? 'text-base font-bold' : 'text-sm'}
-              ${isPositive ? 'text-slate-100' : 'text-amber-100'}
+              ${showEvaluationState && !isPositive ? 'text-red-200' : 'text-slate-100'}
             `}
             title={block.title}
           >
@@ -150,7 +171,7 @@ export const CharacteristicBlock: React.FC<CharacteristicBlockProps> = ({
       {/* Selection helper bar */}
       {isSelected && (
         <div className="mt-2 pt-2 border-t border-cyan-500/30 flex items-center justify-between text-[11px] text-cyan-300 font-medium">
-          <span>Tap a pillar to place</span>
+          <span>Tap any pillar above to place</span>
           <span className="px-1.5 py-0.5 bg-cyan-500/20 rounded text-[10px]">Ready</span>
         </div>
       )}

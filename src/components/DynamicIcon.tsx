@@ -24,6 +24,13 @@ import {
   TrendingUp,
   Cpu,
   Layers,
+  Globe,
+  BookOpen,
+  Activity,
+  Award,
+  Zap,
+  RotateCcw,
+  ShieldAlert,
   LucideProps
 } from 'lucide-react';
 
@@ -81,6 +88,20 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({ name, ...props }) => {
       return <Cpu {...props} />;
     case 'Layers':
       return <Layers {...props} />;
+    case 'Globe':
+      return <Globe {...props} />;
+    case 'BookOpen':
+      return <BookOpen {...props} />;
+    case 'Activity':
+      return <Activity {...props} />;
+    case 'Award':
+      return <Award {...props} />;
+    case 'Zap':
+      return <Zap {...props} />;
+    case 'RotateCcw':
+      return <RotateCcw {...props} />;
+    case 'ShieldAlert':
+      return <ShieldAlert {...props} />;
     default:
       return <Building2 {...props} />;
   }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ManagementBlock, OrganizationalPillarInfo, PillarId } from '../types/game';
 import { CharacteristicBlock } from './CharacteristicBlock';
 import { DynamicIcon } from './DynamicIcon';
-import { Plus, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react';
+import { Plus, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface OrganizationPillarProps {
   pillar: OrganizationalPillarInfo;
@@ -12,6 +12,7 @@ interface OrganizationPillarProps {
   onSelectPillar: (pillarId: PillarId) => void;
   onRemoveBlock: (block: ManagementBlock, pillarId?: PillarId) => void;
   presentationMode?: boolean;
+  showEvaluationState?: boolean;
 }
 
 export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
@@ -22,6 +23,7 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
   onSelectPillar,
   onRemoveBlock,
   presentationMode = false,
+  showEvaluationState = false,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -67,15 +69,16 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
       onClick={handlePillarClick}
       className={`
         relative flex flex-col rounded-2xl transition-all duration-300
-        ${presentationMode ? 'min-h-[380px] p-5' : 'min-h-[340px] p-4'}
+        ${presentationMode ? 'min-h-[400px] p-5' : 'min-h-[360px] p-4'}
         ${isDragOver
           ? 'bg-nexora-800/90 ring-4 ring-cyan-400 shadow-glow-cyan scale-[1.01]'
           : selectedBlock
             ? 'bg-nexora-900/95 ring-2 ring-dashed ring-cyan-500/50 hover:ring-cyan-400 cursor-pointer'
             : 'bg-nexora-900/80 border border-slate-700/60 shadow-pillar'
         }
-        ${hasNegative ? 'border-red-500/50 bg-red-950/20 shadow-glow-rose' : ''}
-        ${hasBlocks && !hasNegative ? 'border-cyan-500/40' : ''}
+        ${showEvaluationState && hasNegative ? 'border-red-500/60 bg-red-950/20 shadow-glow-rose' : ''}
+        ${showEvaluationState && hasBlocks && !hasNegative ? 'border-emerald-500/50 shadow-glow-emerald' : ''}
+        ${!showEvaluationState && hasBlocks ? 'border-cyan-500/40' : ''}
       `}
     >
       {/* Top Header of Pillar */}
@@ -84,12 +87,12 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
           <div
             className={`
               p-2.5 rounded-xl shrink-0 flex items-center justify-center
-              ${hasNegative
+              ${showEvaluationState && hasNegative
                 ? 'bg-red-500/20 text-red-400'
                 : 'bg-nexora-800 text-cyan-400 border border-cyan-500/30'
               }
             `}
-            style={{ color: hasNegative ? '#EF4444' : pillar.accentColor }}
+            style={{ color: showEvaluationState && hasNegative ? '#EF4444' : pillar.accentColor }}
           >
             <DynamicIcon name={pillar.iconName} className="w-5 h-5" />
           </div>
@@ -105,18 +108,30 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
 
         {/* Status Chip */}
         <div className="shrink-0">
-          {hasNegative ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950/90 text-red-400 border border-red-500/40">
-              <AlertTriangle className="w-3 h-3" /> Risk
-            </span>
-          ) : hasBlocks ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40">
-              <ShieldCheck className="w-3 h-3" /> Active
-            </span>
+          {showEvaluationState ? (
+            hasNegative ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950/90 text-red-400 border border-red-500/40">
+                <AlertTriangle className="w-3 h-3" /> Trap Risk
+              </span>
+            ) : hasBlocks ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40">
+                <ShieldCheck className="w-3 h-3" /> Synergized
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800/70 text-slate-400 border border-slate-700">
+                Empty
+              </span>
+            )
           ) : (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800/70 text-slate-400 border border-slate-700">
-              Empty
-            </span>
+            hasBlocks ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40">
+                {placedBlocks.length} Active
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800/70 text-slate-400 border border-slate-700">
+                Empty
+              </span>
+            )
           )}
         </div>
       </div>
@@ -135,7 +150,7 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
       </div>
 
       {/* Placed Blocks Area */}
-      <div className="flex-1 flex flex-col gap-2.5 my-1">
+      <div className="flex-1 flex flex-col gap-2.5 my-1 overflow-y-auto max-h-[300px] pr-0.5">
         {hasBlocks ? (
           placedBlocks.map((block) => (
             <CharacteristicBlock
@@ -145,6 +160,7 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
               currentPillarId={pillar.id}
               onRemove={onRemoveBlock}
               presentationMode={presentationMode}
+              showEvaluationState={showEvaluationState}
             />
           ))
         ) : (
@@ -161,10 +177,10 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
               <Plus className={`w-4 h-4 ${selectedBlock ? 'text-cyan-400' : 'text-slate-500'}`} />
             </div>
             <p className="text-xs font-semibold text-slate-300">
-              {selectedBlock ? 'Tap to place selected block' : 'Drop Characteristic Here'}
+              {selectedBlock ? 'Tap to place selected option' : 'Drop Management Option Here'}
             </p>
             <p className="text-[10px] text-slate-500 mt-0.5">
-              Drag from bench or click to assign
+              Drag from bench or select and click
             </p>
           </div>
         )}
@@ -173,16 +189,16 @@ export const OrganizationPillar: React.FC<OrganizationPillarProps> = ({
       {/* Pillar Footer Indicator */}
       <div className="pt-2 mt-auto border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
         <span className="font-mono text-[10px] text-slate-500">
-          CAPACITY: {placedBlocks.length}/2
+          ASSIGNED: {placedBlocks.length}
         </span>
-        {hasNegative && (
+        {showEvaluationState && hasNegative && (
           <span className="text-[10px] text-red-400 font-semibold animate-pulse">
-            Structural instability!
+            Internal Risk Detected
           </span>
         )}
-        {!hasNegative && hasBlocks && (
-          <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Stabilized
+        {!showEvaluationState && hasBlocks && (
+          <span className="text-[10px] text-cyan-400 font-medium">
+            Active in Structure
           </span>
         )}
       </div>
