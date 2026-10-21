@@ -1,229 +1,330 @@
-import React, { useState, useEffect } from 'react';
-import { ManagementBlock, PillarId, PillarPlacements, OverallEvaluation } from './types/game';
-import { MANAGEMENT_BLOCKS } from './data/blocks';
-import { calculateOrganizationEvaluation } from './utils/scoring';
+import React, { useState, useEffect, useMemo } from 'react';
+import { GameBlock, StructureSlot, BlueprintDefinition, StructureEvaluation } from './types/game';
+import { INITIAL_BLOCKS } from './data/blocks';
+import { BLUEPRINTS } from './data/blueprints';
+import { evaluateStructure } from './utils/scoring';
 import { Navbar } from './components/Navbar';
-import { LandingScreen } from './components/LandingScreen';
-import { OrganizationBuilder } from './components/OrganizationBuilder';
-import { ResultsScreen } from './components/ResultsScreen';
-import { PresentationModal } from './components/PresentationModal';
+import { StructureCanvas } from './components/StructureCanvas';
+import { BlockInventory } from './components/BlockInventory';
+import { VictoryModal } from './components/VictoryModal';
+import { CustomBlockModal } from './components/CustomBlockModal';
+import { HelpModal } from './components/HelpModal';
+import { 
+  playSnapSound, 
+  playPopSound, 
+  playClickSound, 
+  toggleSound, 
+  getSoundEnabled 
+} from './utils/sound';
 
 export const App: React.FC = () => {
-  const [screen, setScreen] = useState<'landing' | 'building' | 'results'>('landing');
-  const [placements, setPlacements] = useState<PillarPlacements>({
-    people: [],
-    performance: [],
-    innovation: [],
-    purpose: [],
-    structure: []
+  const [currentBlueprint] = useState<BlueprintDefinition>(BLUEPRINTS[0]);
+  const [slots, setSlots] = useState<StructureSlot[]>(() => {
+    return BLUEPRINTS[0].slots.map(s => ({ ...s, block: null }));
   });
-  const [availableBlocks, setAvailableBlocks] = useState<ManagementBlock[]>([]);
-  const [selectedBlock, setSelectedBlock] = useState<ManagementBlock | null>(null);
-  const [evaluation, setEvaluation] = useState<OverallEvaluation | null>(null);
-  const [presentationMode, setPresentationMode] = useState<boolean>(false);
-  const [isPrinciplesModalOpen, setIsPrinciplesModalOpen] = useState<boolean>(false);
 
-  // Sync presentation mode class to document body
-  useEffect(() => {
-    if (presentationMode) {
-      document.body.classList.add('presentation-mode');
-    } else {
-      document.body.classList.remove('presentation-mode');
-    }
-  }, [presentationMode]);
+  // Custom blocks created by user
+  const [customBlocks, setCustomBlocks] = useState<GameBlock[]>([]);
 
-  // Start a fresh unified game
-  const startGame = () => {
-    setPlacements({
-      people: [],
-      performance: [],
-      innovation: [],
-      purpose: [],
-      structure: []
+  // Combined active blocks pool (20 blocks total: 5 per color: 3 right, 2 wrong)
+  const blocks = useMemo(() => {
+    return [...INITIAL_BLOCKS, ...customBlocks];
+  }, [customBlocks]);
+
+  const [selectedBlock, setSelectedBlock] = useState<GameBlock | null>(null);
+
+  // Modals & Interactivity states
+  const [isVictoryOpen, setIsVictoryOpen] = useState(false);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(getSoundEnabled());
+  const [isEarthquakeActive, setIsEarthquakeActive] = useState(false);
+  const [evaluation, setEvaluation] = useState<StructureEvaluation | null>(null);
+
+  // Set of placed block IDs to show visual badges in the inventory
+  const placedBlockIds = useMemo(() => {
+    const ids = new Set<string>();
+    slots.forEach(s => {
+      if (s.block) ids.add(s.block.id);
     });
-    // All 63 blocks available in bench
-    setAvailableBlocks([...MANAGEMENT_BLOCKS]);
-    setSelectedBlock(null);
-    setEvaluation(null);
-    setScreen('building');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    return ids;
+  }, [slots]);
 
-  // Drag and drop handler
-  const handleDropBlock = (blockId: string, targetPillarId: PillarId, sourcePillarId?: PillarId | null) => {
-    let block: ManagementBlock | undefined;
+  // Place a block into a specific slot (Zero spoilers: no buzzer or wrong answer alert during placement!)
+  const handlePlaceBlock = (slotId: string, blockToPlace: GameBlock) => {
+    playSnapSound();
 
-    // Check if source is another pillar
-    if (sourcePillarId && sourcePillarId !== targetPillarId) {
-      block = placements[sourcePillarId].find(b => b.id === blockId);
-      if (block) {
-        setPlacements(prev => ({
-          ...prev,
-          [sourcePillarId]: prev[sourcePillarId].filter(b => b.id !== blockId),
-          [targetPillarId]: [...prev[targetPillarId], block!]
-        }));
-        setSelectedBlock(null);
-        return;
+    setSlots(prevSlots => {
+      // First, remove this block if it was already placed in another slot
+      const cleanedSlots = prevSlots.map(s => {
+        if (s.block?.id === blockToPlace.id) {
+          return { ...s, block: null };
+        }
+        return s;
+      });
+
+      // Now place into target slot
+      const nextSlots = cleanedSlots.map(s => {
+        if (s.id === slotId) {
+          return { ...s, block: blockToPlace };
+        }
+        return s;
+      });
+
+      // If all 10 slots are filled, automatically evaluate and show results
+      const allFilled = nextSlots.every(s => s.block !== null);
+      if (allFilled) {
+        const evalResult = evaluateStructure(nextSlots);
+        setEvaluation(evalResult);
+        setTimeout(() => {
+          setIsVictoryOpen(true);
+        }, 600);
       }
-    }
 
-    // Otherwise it came from bench
-    block = availableBlocks.find(b => b.id === blockId);
-    if (!block) return;
-
-    setAvailableBlocks(prev => prev.filter(b => b.id !== blockId));
-    setPlacements(prev => ({
-      ...prev,
-      [targetPillarId]: [...prev[targetPillarId], block!]
-    }));
-    setSelectedBlock(null);
-  };
-
-  // Click-to-place handler
-  const handleSelectPillar = (pillarId: PillarId) => {
-    if (!selectedBlock) return;
-
-    setAvailableBlocks(prev => prev.filter(b => b.id !== selectedBlock.id));
-
-    setPlacements(prev => {
-      const next: PillarPlacements = {
-        people: prev.people.filter(b => b.id !== selectedBlock.id),
-        performance: prev.performance.filter(b => b.id !== selectedBlock.id),
-        innovation: prev.innovation.filter(b => b.id !== selectedBlock.id),
-        purpose: prev.purpose.filter(b => b.id !== selectedBlock.id),
-        structure: prev.structure.filter(b => b.id !== selectedBlock.id),
-      };
-      next[pillarId] = [...next[pillarId], selectedBlock];
-      return next;
+      return nextSlots;
     });
 
     setSelectedBlock(null);
   };
 
-  // Remove block from a pillar back to bench
-  const handleRemoveBlock = (block: ManagementBlock, pillarId?: PillarId) => {
-    if (!pillarId) return;
+  // Effortless 1-Click Quick Place: Snaps block into the FIRST open slot matching color or any open slot
+  const handleQuickPlaceBlock = (blockToPlace: GameBlock) => {
+    playSnapSound();
+    const emptySlot = slots.find(s => s.block === null && s.attributeColor === blockToPlace.color) 
+                   || slots.find(s => s.block === null);
 
-    setPlacements(prev => ({
-      ...prev,
-      [pillarId]: prev[pillarId].filter(b => b.id !== block.id)
-    }));
-
-    setAvailableBlocks(prev => {
-      if (prev.some(b => b.id === block.id)) return prev;
-      return [...prev, block].sort((a, b) => a.blockNumber - b.blockNumber);
-    });
-
-    if (selectedBlock?.id === block.id) {
-      setSelectedBlock(null);
+    if (emptySlot) {
+      handlePlaceBlock(emptySlot.id, blockToPlace);
+    } else {
+      setSelectedBlock(blockToPlace);
     }
   };
 
-  // Clear all pillars back to bench
-  const handleResetBoard = () => {
-    const allBlocksToReturn: ManagementBlock[] = [];
-    Object.values(placements).forEach(blocks => {
-      allBlocksToReturn.push(...blocks);
+  // Remove a block from a slot
+  const handleRemoveBlock = (slotId: string) => {
+    setSlots(prevSlots => {
+      return prevSlots.map(s => {
+        if (s.id === slotId) {
+          return { ...s, block: null };
+        }
+        return s;
+      });
     });
+  };
 
-    setPlacements({
-      people: [],
-      performance: [],
-      innovation: [],
-      purpose: [],
-      structure: []
-    });
-
-    setAvailableBlocks(prev => {
-      const combined = [...prev, ...allBlocksToReturn];
-      const unique = Array.from(new Map(combined.map(b => [b.id, b])).values());
-      return unique.sort((a, b) => a.blockNumber - b.blockNumber);
-    });
-
+  // Clear all slots
+  const handleResetStructure = () => {
+    playPopSound();
+    setSlots(currentBlueprint.slots.map(s => ({ ...s, block: null })));
     setSelectedBlock(null);
+    setIsVictoryOpen(false);
   };
 
-  // Strategic evaluation
-  const handleEvaluate = () => {
-    const result = calculateOrganizationEvaluation(placements);
-    setEvaluation(result);
-    setScreen('results');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Instant Auto-Fill demonstration with correct management blocks
+  const handleAutoFill = () => {
+    playSnapSound();
+    const correctReds = INITIAL_BLOCKS.filter(b => b.color === 'red' && !b.isWrong);
+    const correctYellows = INITIAL_BLOCKS.filter(b => b.color === 'yellow' && !b.isWrong);
+    const correctBlues = INITIAL_BLOCKS.filter(b => b.color === 'blue' && !b.isWrong);
+    const correctGreens = INITIAL_BLOCKS.filter(b => b.color === 'green' && !b.isWrong);
+
+    let redIdx = 0;
+    let yellowIdx = 0;
+    let blueIdx = 0;
+    let greenIdx = 0;
+
+    setSlots(prevSlots => {
+      const nextSlots = prevSlots.map(s => {
+        if (s.attributeColor === 'red') {
+          const blk = correctReds[redIdx % correctReds.length];
+          redIdx++;
+          return { ...s, block: blk };
+        }
+        if (s.attributeColor === 'yellow') {
+          const blk = correctYellows[yellowIdx % correctYellows.length];
+          yellowIdx++;
+          return { ...s, block: blk };
+        }
+        if (s.attributeColor === 'blue') {
+          const blk = correctBlues[blueIdx % correctBlues.length];
+          blueIdx++;
+          return { ...s, block: blk };
+        }
+        if (s.attributeColor === 'green') {
+          const blk = correctGreens[greenIdx % correctGreens.length];
+          greenIdx++;
+          return { ...s, block: blk };
+        }
+        return s;
+      });
+
+      const evalResult = evaluateStructure(nextSlots);
+      setEvaluation(evalResult);
+      setTimeout(() => {
+        setIsVictoryOpen(true);
+      }, 500);
+
+      return nextSlots;
+    });
   };
 
-  // Improve organization: return to building screen while keeping placements intact
-  const handleImproveOrganization = () => {
-    setScreen('building');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Add custom block
+  const handleAddCustomBlock = (newBlock: GameBlock) => {
+    setCustomBlocks(prev => [newBlock, ...prev]);
+    handleQuickPlaceBlock(newBlock);
   };
 
-  // Play again: restart fresh simulation
-  const handlePlayAgain = () => {
-    startGame();
+  // Trigger Earthquake Simulation
+  const handleTriggerEarthquake = () => {
+    setIsEarthquakeActive(true);
+    setTimeout(() => {
+      setIsEarthquakeActive(false);
+    }, 1200);
   };
+
+  // Check Result & Finish Game manually
+  const handleFinishGame = () => {
+    playClickSound();
+    const evalResult = evaluateStructure(slots);
+    setEvaluation(evalResult);
+    setIsVictoryOpen(true);
+  };
+
+  // Sound toggle
+  const handleToggleSound = () => {
+    const nextState = toggleSound();
+    setIsSoundEnabled(nextState);
+  };
+
+  // Global listener for HTML5 drop events
+  useEffect(() => {
+    const handleDroppedEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ slotId: string; blockId: string }>;
+      const { slotId, blockId } = customEvent.detail;
+      const targetBlock = blocks.find(b => b.id === blockId);
+      if (targetBlock) {
+        handlePlaceBlock(slotId, targetBlock);
+      }
+    };
+
+    window.addEventListener('block-dropped-on-slot', handleDroppedEvent);
+    return () => {
+      window.removeEventListener('block-dropped-on-slot', handleDroppedEvent);
+    };
+  }, [blocks]);
+
+  const filledCount = slots.filter(s => s.block !== null).length;
 
   return (
-    <div className="min-h-screen bg-enterprise-grid flex flex-col text-slate-100 selection:bg-cyan-500 selection:text-white">
-      {/* Top Navbar */}
+    <div className="min-h-screen flex flex-col bg-block-grid text-slate-800">
+      {/* Top Navigation: Single 10-block level */}
       <Navbar
-        presentationMode={presentationMode}
-        onTogglePresentationMode={() => setPresentationMode(prev => !prev)}
-        onOpenPrinciplesModal={() => setIsPrinciplesModalOpen(true)}
-        onResetGame={() => setScreen('landing')}
-        isInGame={screen !== 'landing'}
+        currentBlueprint={currentBlueprint}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={handleToggleSound}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onReset={handleResetStructure}
+        filledCount={filledCount}
+        totalSlots={slots.length}
       />
 
-      {/* Main Screen Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-4">
-        {screen === 'landing' && (
-          <LandingScreen
-            onStartGame={startGame}
-            presentationMode={presentationMode}
-            onTogglePresentationMode={() => setPresentationMode(prev => !prev)}
-            onOpenPrinciplesModal={() => setIsPrinciplesModalOpen(true)}
-          />
-        )}
+      {/* Main Game Interface */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-6">
+        {/* Colorful Welcome Banner */}
+        <div className="bg-gradient-to-r from-red-500 via-amber-400 via-blue-500 to-emerald-500 p-1 rounded-[30px] shadow-xl">
+          <div className="bg-white rounded-[26px] p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-center md:text-left">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-amber-400 to-blue-500 flex items-center justify-center text-white shadow-lg font-display font-black text-2xl shrink-0">
+                🧱
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display">
+                  10-Block Management Pyramid Challenge
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium mt-0.5">
+                  Choose from <span className="font-extrabold text-red-600">🔴 Red (Leadership)</span>,{' '}
+                  <span className="font-extrabold text-amber-600">🟡 Yellow (Innovation)</span>,{' '}
+                  <span className="font-extrabold text-blue-600">🔵 Blue (Systems)</span>, and{' '}
+                  <span className="font-extrabold text-emerald-600">🟢 Green (People)</span>. 5 options each: 3 right, 2 wrong. Wrong choices deduct points when checking results!
+                </p>
+              </div>
+            </div>
 
-        {screen === 'building' && (
-          <OrganizationBuilder
-            placements={placements}
-            availableBlocks={availableBlocks}
-            selectedBlock={selectedBlock}
-            onSelectBlock={setSelectedBlock}
-            onDropBlock={handleDropBlock}
-            onSelectPillar={handleSelectPillar}
-            onRemoveBlock={handleRemoveBlock}
-            onEvaluate={handleEvaluate}
-            onResetBoard={handleResetBoard}
-            presentationMode={presentationMode}
-          />
-        )}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={handleAutoFill}
+                className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5"
+              >
+                <span>⚡ 1-Click Auto Fill</span>
+              </button>
+              <button
+                onClick={() => setIsHelpOpen(true)}
+                className="px-3.5 py-2.5 rounded-2xl border-2 border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm transition-colors"
+              >
+                How to Play
+              </button>
+            </div>
+          </div>
+        </div>
 
-        {screen === 'results' && evaluation && (
-          <ResultsScreen
-            evaluation={evaluation}
-            placements={placements}
-            onImproveOrganization={handleImproveOrganization}
-            onPlayAgain={handlePlayAgain}
-            presentationMode={presentationMode}
-          />
-        )}
+        {/* The Structure Canvas (The 10-Block Pyramid) */}
+        <StructureCanvas
+          blueprint={currentBlueprint}
+          slots={slots}
+          selectedBlock={selectedBlock}
+          availableBlocks={blocks}
+          onPlaceBlock={handlePlaceBlock}
+          onRemoveBlock={handleRemoveBlock}
+          onFinishGame={handleFinishGame}
+          onResetStructure={handleResetStructure}
+          onAutoFill={handleAutoFill}
+          isEarthquakeActive={isEarthquakeActive}
+        />
+
+        {/* The Block Palette Drawer */}
+        <BlockInventory
+          blocks={blocks}
+          selectedBlock={selectedBlock}
+          placedBlockIds={placedBlockIds}
+          onSelectBlock={setSelectedBlock}
+          onQuickPlaceBlock={handleQuickPlaceBlock}
+          onOpenCustomBlockModal={() => setIsCustomModalOpen(true)}
+          onAutoFill={handleAutoFill}
+        />
       </main>
 
-      {/* Presentation Mode Info Modal */}
-      <PresentationModal
-        isOpen={isPrinciplesModalOpen}
-        onClose={() => setIsPrinciplesModalOpen(false)}
+      {/* Victory / Results Evaluation Modal */}
+      <VictoryModal
+        isOpen={isVictoryOpen}
+        evaluation={evaluation}
+        blueprint={currentBlueprint}
+        onClose={() => setIsVictoryOpen(false)}
+        onReset={handleResetStructure}
+        onTriggerEarthquake={handleTriggerEarthquake}
+        isEarthquakeActive={isEarthquakeActive}
       />
 
-      {/* Footer */}
-      <footer className="mt-auto py-6 border-t border-slate-900 bg-nexora-950/80 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="font-mono text-[11px] text-slate-400">
-            NEXORA — The Human-Centred Smart Enterprise • Essentials of Management
+      {/* Custom Block Creator Modal */}
+      <CustomBlockModal
+        isOpen={isCustomModalOpen}
+        onClose={() => setIsCustomModalOpen(false)}
+        onAddBlock={handleAddCustomBlock}
+      />
+
+      {/* How to Play Help Modal */}
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+      />
+
+      {/* Cheerful Footer */}
+      <footer className="mt-auto py-5 border-t-2 border-slate-200 bg-white/90 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="font-mono text-xs font-black text-slate-700">
+            ★ ESSENTIALS OF MANAGEMENT (EOM) • 10-BLOCK PYRAMID SIMULATION ★
           </div>
-          <div className="text-slate-500 text-[11px]">
-            Designed for interactive classroom presentation & simulation analysis
+          <div className="text-slate-500 text-xs font-semibold">
+            Red (Leadership) • Yellow (Innovation) • Blue (Systems) • Green (People)
           </div>
         </div>
       </footer>

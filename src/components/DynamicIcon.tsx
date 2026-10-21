@@ -31,6 +31,24 @@ import {
   Zap,
   RotateCcw,
   ShieldAlert,
+  Crown,
+  Flame,
+  Rocket,
+  Shield,
+  Database,
+  CheckCheck,
+  Smile,
+  Sparkle,
+  Triangle,
+  Castle,
+  Building,
+  Trophy,
+  Volume2,
+  VolumeX,
+  Play,
+  Share2,
+  RefreshCw,
+  Plus,
   LucideProps
 } from 'lucide-react';
 
@@ -98,10 +116,46 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({ name, ...props }) => {
       return <Award {...props} />;
     case 'Zap':
       return <Zap {...props} />;
-    case 'RotateCcw':
-      return <RotateCcw {...props} />;
-    case 'ShieldAlert':
-      return <ShieldAlert {...props} />;
+    case 'Crown':
+      return <Crown {...props} />;
+    case 'Flame':
+      return <Flame {...props} />;
+    case 'Rocket':
+      return <Rocket {...props} />;
+    case 'Shield':
+      return <Shield {...props} />;
+    case 'Database':
+      return <Database {...props} />;
+    case 'CheckCheck':
+      return <CheckCheck {...props} />;
+    case 'Smile':
+      return <Smile {...props} />;
+    case 'Sparkle':
+      return <Sparkle {...props} />;
+    case 'Triangle':
+      return <Triangle {...props} />;
+    case 'Castle':
+      return <Castle {...props} />;
+    case 'Building':
+      return <Building {...props} />;
+    case 'Trophy':
+      return <Trophy {...props} />;
+    case 'Volume2':
+      return <Volume2 {...props} />;
+    case 'VolumeX':
+      return <VolumeX {...props} />;
+    case 'Play':
+      return <Play {...props} />;
+    case 'Share2':
+      return <Share2 {...props} />;
+    case 'RefreshCw':
+      return <RefreshCw {...props} />;
+    case 'Plus':
+      return <Plus {...props} />;
+    case 'Clock':
+      return <Activity {...props} />;
+    case 'FileText':
+      return <Layers {...props} />;
     default:
       return <Building2 {...props} />;
   }

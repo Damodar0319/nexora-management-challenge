@@ -1,63 +1,78 @@
-export type PillarId = 'people' | 'performance' | 'innovation' | 'purpose' | 'structure';
+export type BlockColor = 'red' | 'yellow' | 'blue' | 'green';
 
-export type BlockType = 'positive' | 'negative';
-
-export interface ManagementBlock {
+export interface GameBlock {
   id: string;
-  blockNumber: number;
-  title: string;
-  type: BlockType;
-  description: string;
-  iconName: string;
-  // Core management principle associated with this characteristic
-  principle: string;
-  // Which pillar gets the highest baseline synergy (+18)
-  primaryPillar: PillarId;
-  // Secondary pillar that also gets strong synergy (+14)
-  secondaryPillars?: PillarId[];
-  // If negative, which pillars suffer severe damage
-  criticallyDamagedPillars?: PillarId[];
-  // Educational rationales
-  positiveImpactReason: string;
-  negativeImpactReason?: string;
-}
-
-export interface OrganizationalPillarInfo {
-  id: PillarId;
+  color: BlockColor;
   title: string;
   subtitle: string;
-  iconName: string;
-  accentColor: string;
-  represents: string[];
+  icon: string;
   description: string;
+  power: number; // uniform display points e.g. 10
+  principle: string;
+  isCustom?: boolean;
+  isWrong?: boolean; // Hidden flag: true if it's one of the 2 wrong answers
+  wrongReason?: string; // Revealed only when checking results
 }
 
-export type PillarPlacements = Record<PillarId, ManagementBlock[]>;
-
-export interface PillarEvaluation {
-  pillarId: PillarId;
-  pillarName: string;
-  score: number; // 0 to 20 normalized
-  rating: 'critical' | 'deficient' | 'functional' | 'strong' | 'exemplary';
-  placedBlocks: ManagementBlock[];
-  feedback: string;
-  managementPrinciple: string;
-  suggestion: string;
-  hasRisk: boolean;
+export interface StructureSlot {
+  id: string;
+  tier: number; // 1 = base, 2 = mid, 3 = high, 4 = crown
+  tierLabel: string;
+  tierAttributeHint?: string;
+  slotIndex: number;
+  label: string;
+  targetAttribute: string; // e.g., "Leadership & Vision"
+  attributeColor: BlockColor; // 'red' | 'yellow' | 'blue' | 'green'
+  attributeHint: string; // e.g., "Put Red Leadership block here"
+  allowedColor?: BlockColor | 'any';
+  block: GameBlock | null;
 }
 
-export interface OverallEvaluation {
-  overallScore: number; // 0 to 100
-  statusTier: 'UNSTABLE ORGANIZATION' | 'DEVELOPING ORGANIZATION' | 'EFFECTIVE ORGANIZATION' | 'HIGH-PERFORMING ORGANIZATION' | 'IDEAL ORGANIZATION ACHIEVED';
-  tierDescription: string;
-  pillarEvaluations: Record<PillarId, PillarEvaluation>;
-  strongestPillar: { id: PillarId; name: string; score: number };
-  weakestPillar: { id: PillarId; name: string; score: number };
-  bestDecision: { blockTitle: string; pillarName: string; reason: string } | null;
-  biggestRisk: { blockTitle: string; pillarName: string; risk: string } | null;
-  recommendedImprovements: string[];
-  totalBlocksPlaced: number;
-  synergyBonus: number;
-  balanceBonus: number;
-  penalties: number;
+export interface BlueprintDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  tagline: string;
+  targetCount: number;
+  layout: 'pyramid';
+  tierDescriptions?: Record<number, { title: string; attributeText: string }>;
+  slots: {
+    id: string;
+    tier: number;
+    tierLabel: string;
+    tierAttributeHint?: string;
+    slotIndex: number;
+    label: string;
+    targetAttribute: string;
+    attributeColor: BlockColor;
+    attributeHint: string;
+    allowedColor?: BlockColor | 'any';
+  }[];
+}
+
+export interface PlacedResultItem {
+  block: GameBlock;
+  slotLabel: string;
+  isWrong: boolean;
+  scoreChange: number; // +10 or -15
+  explanation: string;
+}
+
+export interface StructureEvaluation {
+  totalSlots: number;
+  filledSlots: number;
+  isCompleted: boolean;
+  score: number;
+  grade: 'S+' | 'A' | 'B' | 'C' | 'FAIL';
+  structureName: string;
+  colorCounts: Record<BlockColor, number>;
+  colorPercentages: Record<BlockColor, number>;
+  earthquakeResistance: number; // 0 - 100%
+  recommendation: string;
+  correctCount: number;
+  wrongCount: number;
+  pointsAdded: number;
+  pointsDeducted: number;
+  resultsBreakdown: PlacedResultItem[];
 }

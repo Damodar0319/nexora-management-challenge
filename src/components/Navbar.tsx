@@ -1,87 +1,133 @@
 import React from 'react';
-import { Presentation, HelpCircle, RotateCcw } from 'lucide-react';
+import { BlueprintDefinition } from '../types/game';
+import { 
+  Volume2, 
+  VolumeX, 
+  HelpCircle, 
+  RotateCcw,
+  Sparkles,
+  Trophy,
+  CheckCircle2
+} from 'lucide-react';
+import { playClickSound } from '../utils/sound';
 
 interface NavbarProps {
-  presentationMode: boolean;
-  onTogglePresentationMode: () => void;
-  onOpenPrinciplesModal: () => void;
-  onResetGame: () => void;
-  isInGame: boolean;
+  currentBlueprint: BlueprintDefinition;
+  onSelectBlueprint?: (blueprint: BlueprintDefinition) => void;
+  isSoundEnabled: boolean;
+  onToggleSound: () => void;
+  onOpenHelp: () => void;
+  onReset: () => void;
+  filledCount: number;
+  totalSlots: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  presentationMode,
-  onTogglePresentationMode,
-  onOpenPrinciplesModal,
-  onResetGame,
-  isInGame,
+  currentBlueprint,
+  isSoundEnabled,
+  onToggleSound,
+  onOpenHelp,
+  onReset,
+  filledCount,
+  totalSlots,
 }) => {
+  const isFull = filledCount === totalSlots;
+
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-nexora-950/85 border-b border-slate-800/80 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        {/* Brand Logo & Wordmark */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={onResetGame}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 p-0.5 shadow-glow-cyan flex items-center justify-center">
-            <div className="w-full h-full bg-nexora-950 rounded-[10px] flex items-center justify-center">
-              <span className="font-black text-cyan-400 text-sm font-display tracking-tighter">NX</span>
-            </div>
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-md">
+      {/* Top rainbow strip */}
+      <div className="h-2 bg-gradient-to-r from-red-500 via-amber-400 via-blue-500 to-emerald-500" />
+
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        {/* Brand Logo & Name */}
+        <div className="flex items-center gap-3">
+          {/* 4-Color Toy Block Logo Icon */}
+          <div className="w-10 h-10 rounded-2xl grid grid-cols-2 gap-1 p-1.5 bg-slate-900 shadow-lg shrink-0">
+            <div className="rounded-md bg-red-500 shadow-sm" />
+            <div className="rounded-md bg-amber-400 shadow-sm" />
+            <div className="rounded-md bg-blue-500 shadow-sm" />
+            <div className="rounded-md bg-emerald-500 shadow-sm" />
           </div>
+
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-base sm:text-lg tracking-wider text-white font-display">
-                NEXORA
+              <span className="font-black text-xl tracking-tight font-display text-slate-900 leading-none">
+                BLOCK<span className="text-blue-600">BUILDER</span>
               </span>
-              <span className="hidden sm:inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-                Management Challenge
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500 text-white shadow-sm">
+                SINGLE 10-BLOCK LEVEL
               </span>
             </div>
-            <div className="text-[10px] text-slate-400 hidden sm:block font-medium">
-              The Human-Centred Smart Enterprise
+            <p className="text-xs text-slate-500 font-semibold hidden sm:block">
+              Red • Yellow • Blue • Green • Essentials of Management
+            </p>
+          </div>
+        </div>
+
+        {/* Single Level Header Badge */}
+        <div className="flex items-center gap-2 bg-slate-100 px-3.5 py-1.5 rounded-2xl border-2 border-slate-200 shadow-inner">
+          <span className="text-base">🏛️</span>
+          <div className="text-left">
+            <div className="text-[10px] font-mono font-black uppercase text-slate-500 leading-tight">
+              Level 1 (Only Level):
+            </div>
+            <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-1.5">
+              <span>{currentBlueprint.name}</span>
+              <span className={`px-2 py-0.2 rounded-full font-mono text-[10px] font-black ${
+                isFull ? 'bg-emerald-500 text-white animate-pulse' : 'bg-blue-600 text-white'
+              }`}>
+                {filledCount}/{totalSlots}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Right utility actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Principles Explainer Modal trigger */}
+        {/* Right utility buttons */}
+        <div className="flex items-center gap-2">
+          {/* Reset button in navbar */}
           <button
-            type="button"
-            onClick={onOpenPrinciplesModal}
-            title="What makes an organization ideal?"
-            className="p-2 sm:px-3 sm:py-1.5 rounded-xl glass-panel text-slate-300 hover:text-white hover:border-cyan-400 text-xs font-medium flex items-center gap-1.5 transition-colors"
+            onClick={() => {
+              playClickSound();
+              onReset();
+            }}
+            disabled={filledCount === 0}
+            className="p-2 sm:px-3 sm:py-2 rounded-2xl border-2 border-slate-200 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 text-xs font-black transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 shadow-sm"
+            title="Reset structure"
           >
-            <HelpCircle className="w-4 h-4 text-cyan-400" />
-            <span className="hidden sm:inline">Concept Guide</span>
+            <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">Reset</span>
           </button>
 
-          {/* Presentation Mode Toggle */}
+          {/* Sound Toggle */}
           <button
-            type="button"
-            onClick={onTogglePresentationMode}
-            title="Toggle Classroom Projector Mode"
+            onClick={() => {
+              playClickSound();
+              onToggleSound();
+            }}
             className={`
-              p-2 sm:px-3 sm:py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all
-              ${presentationMode
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-glow-cyan'
-                : 'glass-panel text-slate-300 hover:text-white hover:border-slate-600'
+              p-2.5 rounded-2xl border-2 transition-all flex items-center justify-center shadow-sm hover:scale-105 active:scale-95
+              ${isSoundEnabled
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                : 'bg-red-50 border-red-300 text-red-600'
               }
             `}
+            title={isSoundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
           >
-            <Presentation className="w-4 h-4" />
-            <span className="hidden md:inline">Projector Mode: {presentationMode ? 'ON' : 'OFF'}</span>
+            {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          {/* Reset / Home */}
-          {isInGame && (
-            <button
-              type="button"
-              onClick={onResetGame}
-              title="Return to Introduction / Reset"
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          )}
+          {/* Help / Rules Guide */}
+          <button
+            onClick={() => {
+              playClickSound();
+              onOpenHelp();
+            }}
+            className="p-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border-2 border-amber-300 text-amber-900 transition-all flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 font-black text-xs gap-1"
+            title="How to play & management principles"
+          >
+            <HelpCircle className="w-4 h-4 text-amber-600" />
+            <span className="hidden md:inline">Rules</span>
+          </button>
         </div>
       </div>
     </header>
