@@ -33,8 +33,13 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | BlockColor>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Unplaced blocks only: once selected for one block, it disappears so it cannot be selected again!
+  const availableBlocks = useMemo(() => {
+    return blocks.filter((b) => !placedBlockIds.has(b.id));
+  }, [blocks, placedBlockIds]);
+
   const filteredBlocks = useMemo(() => {
-    return blocks.filter((b) => {
+    return availableBlocks.filter((b) => {
       if (activeTab !== 'all' && b.color !== activeTab) {
         return false;
       }
@@ -49,7 +54,7 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
       }
       return true;
     });
-  }, [blocks, activeTab, searchQuery]);
+  }, [availableBlocks, activeTab, searchQuery]);
 
   const handleTabChange = (tab: 'all' | BlockColor) => {
     playClickSound();
@@ -57,11 +62,11 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
   };
 
   const colorCounts = {
-    all: blocks.length,
-    red: blocks.filter(b => b.color === 'red').length,
-    yellow: blocks.filter(b => b.color === 'yellow').length,
-    blue: blocks.filter(b => b.color === 'blue').length,
-    green: blocks.filter(b => b.color === 'green').length,
+    all: availableBlocks.length,
+    red: availableBlocks.filter(b => b.color === 'red').length,
+    yellow: availableBlocks.filter(b => b.color === 'yellow').length,
+    blue: availableBlocks.filter(b => b.color === 'blue').length,
+    green: availableBlocks.filter(b => b.color === 'green').length,
   };
 
   return (
@@ -72,14 +77,14 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
             <span className="text-xs font-mono font-black uppercase tracking-wider text-slate-500">
-              Attributes Palette (5 per Color)
+              Attributes Palette ({availableBlocks.length} Available)
             </span>
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display mt-0.5">
             Choose Your Management Blocks
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Each color has 5 choices. Choose carefully — wrong choices will deduct points when results are checked!
+            Once placed into a slot, an option disappears so it cannot be chosen again. (Click any placed block on the pyramid to return it here!)
           </p>
         </div>
 
@@ -216,10 +221,9 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
         </div>
       )}
 
-      {/* Blocks Grid with custom visible scrollbar */}
+      {/* Blocks Grid with custom visible scrollbar (only unplaced options appear!) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 pt-1 max-h-[440px] overflow-y-auto pr-2 custom-visible-scrollbar">
         {filteredBlocks.map((block) => {
-          const isPlaced = placedBlockIds.has(block.id);
           const isSelected = selectedBlock?.id === block.id;
 
           return (
@@ -236,21 +240,16 @@ export const BlockInventory: React.FC<BlockInventoryProps> = ({
                 }}
                 onQuickPlace={(b) => onQuickPlaceBlock(b)}
               />
-
-              {/* Placed indicator badge */}
-              {isPlaced && (
-                <div className="absolute top-2.5 right-2.5 backdrop-blur-sm text-white text-[10px] font-mono font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg pointer-events-none border bg-slate-900/90 border-emerald-400">
-                  <CheckCircle className="w-3 h-3 text-emerald-400" />
-                  Placed
-                </div>
-              )}
             </div>
           );
         })}
 
         {filteredBlocks.length === 0 && (
           <div className="col-span-full py-12 text-center text-slate-400 text-sm font-medium">
-            No blocks found matching "{searchQuery}".
+            {placedBlockIds.size > 0 
+              ? "All blocks in this category have already been placed into the pyramid! (Click any block in the pyramid to remove it)"
+              : `No blocks found matching "${searchQuery}".`
+            }
           </div>
         )}
       </div>

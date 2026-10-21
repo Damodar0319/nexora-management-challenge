@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BlueprintDefinition, StructureSlot, GameBlock, BlockColor } from '../types/game';
 import { BlockPiece } from './BlockPiece';
 import { DynamicIcon } from './DynamicIcon';
@@ -46,6 +46,15 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
   const filledCount = filledSlots.length;
   const isFull = filledCount === totalSlots;
   const canFinish = filledCount >= 1; // Can check result at any time if at least 1 block placed
+
+  // Set of block IDs currently placed in the structure
+  const placedBlockIds = useMemo(() => {
+    const ids = new Set<string>();
+    slots.forEach(s => {
+      if (s.block) ids.add(s.block.id);
+    });
+    return ids;
+  }, [slots]);
 
   // Find active slot for modal picker
   const activePickerSlot = slots.find(s => s.id === activePickerSlotId) || null;
@@ -142,8 +151,13 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
     }
   };
 
-  // Filter blocks inside the modal picker (No spoilers: wrong answers look identical to correct ones!)
+  // Filter blocks inside modal picker:
+  // Disappear if already placed in other slots so the same option cannot be selected twice!
   const modalFilteredBlocks = activePickerSlot ? availableBlocks.filter(b => {
+    // If block is already placed anywhere in the pyramid, do not show it!
+    if (placedBlockIds.has(b.id)) {
+      return false;
+    }
     if (pickerFilter === 'recommended') {
       return b.color === activePickerSlot.attributeColor;
     }
@@ -152,6 +166,13 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
     }
     return b.color === pickerFilter;
   }) : [];
+
+  // Available counts for tab badges
+  const availableReds = availableBlocks.filter(b => b.color === 'red' && !placedBlockIds.has(b.id)).length;
+  const availableYellows = availableBlocks.filter(b => b.color === 'yellow' && !placedBlockIds.has(b.id)).length;
+  const availableBlues = availableBlocks.filter(b => b.color === 'blue' && !placedBlockIds.has(b.id)).length;
+  const availableGreens = availableBlocks.filter(b => b.color === 'green' && !placedBlockIds.has(b.id)).length;
+  const availableTotal = availableBlocks.filter(b => !placedBlockIds.has(b.id)).length;
 
   return (
     <div className={`relative bg-white border-4 border-slate-100 rounded-[32px] p-4 sm:p-7 shadow-2xl transition-all ${isEarthquakeActive ? 'animate-earthquake' : ''}`}>
@@ -393,7 +414,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
         </div>
       </div>
 
-      {/* FULLY VISIBLE CENTERED SELECTION MODAL (Zero Clipping, Identical Colors, No Spoilers!) */}
+      {/* FULLY VISIBLE CENTERED SELECTION MODAL (Zero Clipping, Disappears When Placed Elsewhere!) */}
       {activePickerSlot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-xl bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border-4 border-blue-500 overflow-hidden space-y-4 my-6">
@@ -424,7 +445,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
               </button>
             </div>
 
-            {/* In-Modal Filter Tabs (No Pitfalls tab!) */}
+            {/* In-Modal Filter Tabs with dynamic remaining available counts */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               <button
                 onClick={() => setPickerFilter('recommended')}
@@ -434,7 +455,11 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                     : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                 }`}
               >
-                <span>⭐ Recommended ({activePickerSlot.attributeColor.toUpperCase()})</span>
+                <span>⭐ Recommended ({
+                  activePickerSlot.attributeColor === 'red' ? availableReds :
+                  activePickerSlot.attributeColor === 'yellow' ? availableYellows :
+                  activePickerSlot.attributeColor === 'blue' ? availableBlues : availableGreens
+                })</span>
               </button>
 
               <button
@@ -445,7 +470,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                <span>All Blocks (20)</span>
+                <span>All Available ({availableTotal})</span>
               </button>
 
               <button
@@ -454,7 +479,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                   pickerFilter === 'red' ? 'bg-red-500 text-white shadow-md' : 'bg-red-50 text-red-700'
                 }`}
               >
-                🔴 Red (5)
+                🔴 Red ({availableReds})
               </button>
 
               <button
@@ -463,7 +488,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                   pickerFilter === 'yellow' ? 'bg-amber-400 text-slate-950 shadow-md' : 'bg-amber-50 text-amber-800'
                 }`}
               >
-                🟡 Yellow (5)
+                🟡 Yellow ({availableYellows})
               </button>
 
               <button
@@ -472,7 +497,7 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                   pickerFilter === 'blue' ? 'bg-blue-600 text-white shadow-md' : 'bg-blue-50 text-blue-700'
                 }`}
               >
-                🔵 Blue (5)
+                🔵 Blue ({availableBlues})
               </button>
 
               <button
@@ -481,11 +506,11 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
                   pickerFilter === 'green' ? 'bg-emerald-600 text-white shadow-md' : 'bg-emerald-50 text-emerald-700'
                 }`}
               >
-                🟢 Green (5)
+                🟢 Green ({availableGreens})
               </button>
             </div>
 
-            {/* Super Clear, Easy-to-Scroll Grid of Blocks (All blocks rendered in their authentic color with NO spoilers!) */}
+            {/* Super Clear, Easy-to-Scroll Grid of Blocks (Placed blocks disappear so same option cannot be selected!) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-2 custom-visible-scrollbar p-1">
               {modalFilteredBlocks.map((b) => (
                 <button
@@ -539,15 +564,15 @@ export const StructureCanvas: React.FC<StructureCanvasProps> = ({
               ))}
 
               {modalFilteredBlocks.length === 0 && (
-                <div className="col-span-full py-8 text-center text-slate-400 text-xs">
-                  No blocks found in this category.
+                <div className="col-span-full py-8 text-center text-slate-500 text-xs font-medium">
+                  All blocks in this category have already been placed in other slots of the pyramid.
                 </div>
               )}
             </div>
 
             {/* Footer tip */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>💡 Tip: Click any block to snap it into this slot!</span>
+              <span>💡 Options disappear once selected so you can't pick the same option twice!</span>
               <button
                 onClick={() => setActivePickerSlotId(null)}
                 className="font-bold text-slate-700 hover:text-slate-900 underline"
